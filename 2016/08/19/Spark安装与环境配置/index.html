@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>spark安装与环境配置 | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="SparkPython大数据" />
+  
+  
+  
+  
+  <meta name="description" content="1. Spark安装在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。
+
+下载Spark
+访问Spark下载页
+选择Spark最新版的pre-build安装包下载
+
+
+解压
+ 1tar zvf spark-2.0.0-bin-hadoop2.7.tgz
+
+移动到有效目录下  
+ 1mv spark-2.0.0-bin-hadoop2.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark安装与环境配置">
+<meta property="og:url" content="https://plWang.github.io/2016/08/19/Spark安装与环境配置/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="1. Spark安装在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。
+
+下载Spark
+访问Spark下载页
+选择Spark最新版的pre-build安装包下载
+
+
+解压
+ 1tar zvf spark-2.0.0-bin-hadoop2.7.tgz
+
+移动到有效目录下  
+ 1mv spark-2.0.0-bin-hadoop2.">
+<meta property="og:updated_time" content="2016-10-14T02:47:07.836Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark安装与环境配置">
+<meta name="twitter:description" content="1. Spark安装在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。
+
+下载Spark
+访问Spark下载页
+选择Spark最新版的pre-build安装包下载
+
+
+解压
+ 1tar zvf spark-2.0.0-bin-hadoop2.7.tgz
+
+移动到有效目录下  
+ 1mv spark-2.0.0-bin-hadoop2.">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-Spark安装与环境配置" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      Spark安装与环境配置
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2016/08/19/Spark安装与环境配置/" class="article-date">
+	  <time datetime="2016-08-19T01:00:00.000Z" itemprop="datePublished">2016-08-19</time>
+	</a>
+
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="1-Spark安装"><a href="#1-Spark安装" class="headerlink" title="1. Spark安装"></a>1. Spark安装</h2><p>在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。</p>
+<ol>
+<li>下载Spark<ul>
+<li>访问Spark下载页</li>
+<li>选择Spark最新版的pre-build安装包下载</li>
+</ul>
+</li>
+<li><p>解压</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tar zvf spark-2.0.0-bin-hadoop2.7.tgz</div></pre></td></tr></table></figure>
+</li>
+<li><p>移动到有效目录下  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">mv spark-2.0.0-bin-hadoop2.7.tgz /srv/</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<a id="more"></a>
+<ol>
+<li><p>创建指向该版本Spark的链接  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ln -s /srv/spark-2.0.0-bin-hadoop2.7.tgz /srv/spark</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改bash配置，设置SPARK_HOME环境变量。在ubuntu上，只要修改~/.bash_profile或～/.bash_rc文件，添加下面的语句  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">export SPARK_HOME=/srv/spark  </div><div class="line">export PATH=$SPARK_HOME/bin:$PATH</div></pre></td></tr></table></figure>
+</li>
+<li><p>source这些配置或重启终端后，运行pyspark命令，如果能正常打开pyspark解释器，则证明安装成功。</p>
+</li>
+</ol>
+<h2 id="2-在Spark中使用IPython-Notebook"><a href="#2-在Spark中使用IPython-Notebook" class="headerlink" title="2. 在Spark中使用IPython Notebook"></a>2. 在Spark中使用IPython Notebook</h2><p>IPython Notebook是交互的呈现科学和理论的必备工具，它能够集成文本和python代码。</p>
+<ol>
+<li><p>为Spark创建一个IPython notebook配置  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ipython profile create spark</div></pre></td></tr></table></figure>
+</li>
+<li><p>创建文件～/.ipython/profile_spark/startup/00-pyspark-setup.py，添加如下代码：  </p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">import</span> sys</div><div class="line"></div><div class="line"><span class="comment">#Configure the environment</span></div><div class="line"><span class="keyword">if</span> <span class="string">'SPARK_HOME'</span> <span class="keyword">not</span> <span class="keyword">in</span> os.environ:</div><div class="line">    os.environ[<span class="string">'SPARK_HOME'</span>] = <span class="string">'/srv/spark'</span></div><div class="line"><span class="comment">#create a variable for our root path</span></div><div class="line">SPARK_HOME = os.environ[<span class="string">'SPARK_HOME'</span>]</div><div class="line"></div><div class="line"><span class="comment">#Add the Pyspark/py4j to the Python Path</span></div><div class="line">sys.path.insert(<span class="number">0</span>, os.path.join(SPARK_HOME, <span class="string">"python"</span>, <span class="string">"build"</span>))</div><div class="line">sys.path.insert(<span class="number">0</span>, os.path.join(SPARK_HOME, <span class="string">"python"</span>))</div></pre></td></tr></table></figure>
+</li>
+<li><p>使用刚刚的配置来启动iPython notebook  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ipython notebook --profile spark</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="3-测试ipython-notebook的spark配置是否成功"><a href="#3-测试ipython-notebook的spark配置是否成功" class="headerlink" title="3. 测试ipython notebook的spark配置是否成功"></a>3. 测试ipython notebook的spark配置是否成功</h2><pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span>  SparkContext</div><div class="line"><span class="keyword">try</span>:  </div><div class="line">    sc.stop() <span class="comment">#停止以前的SparkContext，要不然下面创建工作会失败  </span></div><div class="line"><span class="keyword">except</span>:  </div><div class="line">    <span class="keyword">pass</span></div><div class="line">sc = SparkContext( <span class="string">'local'</span>, <span class="string">'pyspark'</span>)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">isprime</span><span class="params">(n)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    check if integer n is a prime</div><div class="line">    """</div><div class="line">    <span class="comment"># make sure n is a positive integer</span></div><div class="line">    n = abs(int(n))</div><div class="line">    <span class="comment"># 0 and 1 are not primes</span></div><div class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="comment"># 2 is the only even prime number</span></div><div class="line">    <span class="keyword">if</span> n == <span class="number">2</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">True</span></div><div class="line">    <span class="comment"># all other even numbers are not primes</span></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> n &amp; <span class="number">1</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="comment"># range starts with 3 and only needs to go up the square root of n</span></div><div class="line">    <span class="comment"># for all odd numbers</span></div><div class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">3</span>, int(n**<span class="number">0.5</span>)+<span class="number">1</span>, <span class="number">2</span>):</div><div class="line">        <span class="keyword">if</span> n % x == <span class="number">0</span>:</div><div class="line">            <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="keyword">return</span> <span class="keyword">True</span></div><div class="line"> </div><div class="line"><span class="comment"># Create an RDD of numbers from 0 to 1,000,000</span></div><div class="line">nums = sc.parallelize(xrange(<span class="number">1000000</span>))</div><div class="line"> </div><div class="line"><span class="comment"># Compute the number of primes in the RDD</span></div><div class="line"><span class="keyword">print</span> nums.filter(isprime).count()</div></pre></td></tr></table></figure>
+</code></pre><p>运行上面的代码，如果能够正确计算得到一个数字并且没有错误发生，那么说明ipython的spark配置就成功了。</p>
+<p>需要注意：<br>ipython在启动时会自动加载本地spark配置创建一个SparkContext，所以可能需要在程序开头加上</p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">try</span>:  </div><div class="line">    sc.stop() <span class="comment">#停止以前的SparkContext，要不然下面创建工作会失败  </span></div><div class="line"><span class="keyword">except</span>:  </div><div class="line">    <span class="keyword">pass</span></div></pre></td></tr></table></figure>
+</code></pre><p>这段代码，停止以前的SparkContext，然后再创建新的SparkContext。</p>
+<h2 id="4-编写Spark应用"><a href="#4-编写Spark应用" class="headerlink" title="4. 编写Spark应用"></a>4. 编写Spark应用</h2><p>除了在pyspark命令行或者ipython notebook中使用Spark，我们也可以在本地编写一个Spark应用，下面以一个简单的wordCount应用为例。</p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span> SparkContext, SparkConf</div><div class="line"><span class="keyword">from</span> operator <span class="keyword">import</span> add</div><div class="line"></div><div class="line">APP_NAME= <span class="string">"My Spark Application"</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">tokenize</span><span class="params">(text)</span>:</span></div><div class="line">    <span class="keyword">return</span> text.split()</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(sc)</span>:</span></div><div class="line">    text = sc.textFile(<span class="string">"./cs100/lab1/shakespeare.txt"</span>)</div><div class="line">    words = text.flatMap(tokenize)</div><div class="line">    <span class="keyword">print</span> words</div><div class="line">    words_tuple = words.map(<span class="keyword">lambda</span> x: (x, <span class="number">1</span>))</div><div class="line">    words_count = words_tuple.reduceByKey(add)</div><div class="line">    words_count.saveAsTextFile(<span class="string">'wc'</span>)</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</div><div class="line">    <span class="comment">#configure Spark</span></div><div class="line">    conf = SparkConf().setAppName(APP_NAME)</div><div class="line">    conf = conf.setMaster(<span class="string">"local[*]"</span>)</div><div class="line">    sc = SparkContext(conf=conf)</div><div class="line"></div><div class="line">    main(sc)</div></pre></td></tr></table></figure>
+</code></pre><p>上面这段程序列出了一个Spark应用所需的东西：导入Python库，模块常量，用于调试和Spark UI的可是别的应用名称，<br>还有作为驱动程序的一些主要分析方法学。在ifmain中，我们创建了SparkContext，使用了配置好的context执行main。</p>
+<p>这段程序从文本文件中创建了一个RDD，  </p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">text = sc.textFile(<span class="string">"./cs100/lab1/shakespeare.txt"</span>)</div></pre></td></tr></table></figure>
+</code></pre><p>然后，将文本拆分为单词  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">words = text.flatMap(tokenize)</div></pre></td></tr></table></figure>
+</code></pre><p>将每个单词映射为一个键值对，其中键是单词，值为１，然后使用reduceByKey计算每个键的总数。<br>最后将统计结果写入wc文件中。</p>
+<p>使用spark-submit命令来运行这段代码：  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">spark-submit demo.py</div></pre></td></tr></table></figure>
+</code></pre><p>运行结束后，我们可以看到在当前目录下有个wc目录  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ls wc  </div><div class="line">part-00000  part-00001  _SUCCESS</div></pre></td></tr></table></figure>
+</code></pre><p>每个part文件表示本机上的进程计算得到的最终RDD。查看每个part文件，就能够看到字数统计的元组。  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">$ head wc/part-00000</div><div class="line">(u&apos;fawn&apos;, 11)</div><div class="line">(u&apos;considered-&apos;, 1)</div><div class="line">(u&apos;Fame,&apos;, 3)</div><div class="line">(u&apos;mustachio&apos;, 1)</div><div class="line">(u&apos;protested,&apos;, 1)</div><div class="line">(u&apos;sending.&apos;, 3)</div><div class="line">(u&apos;offendeth&apos;, 1)</div><div class="line">(u&apos;instant;&apos;, 1)</div><div class="line">(u&apos;scold&apos;, 4)</div><div class="line">(u&apos;Sergeant.&apos;, 1)</div></pre></td></tr></table></figure>
+</code></pre><h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="http://blog.jobbole.com/86232/" target="_blank" rel="external">Spark入门（Python版）</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/">Python</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Spark/">Spark</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/大数据/">大数据</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/09/28/Hough Transform/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Hough Transform原理
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/07/11/JPEG-LS概述/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">JPEG-LS概述</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-Spark安装"><span class="toc-number">1.</span> <span class="toc-text">1. Spark安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-在Spark中使用IPython-Notebook"><span class="toc-number">2.</span> <span class="toc-text">2. 在Spark中使用IPython Notebook</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-测试ipython-notebook的spark配置是否成功"><span class="toc-number">3.</span> <span class="toc-text">3. 测试ipython notebook的spark配置是否成功</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-编写Spark应用"><span class="toc-number">4.</span> <span class="toc-text">4. 编写Spark应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Reference"><span class="toc-number">5.</span> <span class="toc-text">Reference</span></a></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>

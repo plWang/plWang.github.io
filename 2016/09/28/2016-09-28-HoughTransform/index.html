@@ -1,0 +1,207 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>HoughTransform | Heisenberg</title>
+
+  
+  <meta name="author" content="Wang Penglin">
+  
+
+  
+  <meta name="description" content="1. Lines
+笛卡尔坐标表示
+
+
+
+$$\begin{align}y=mx+c\ \ or\ \ Ax+By+1=0\end{align}$$   xy空间中的一条直线对应Hough空间的一个点(A,B)
+
+极坐标表示
+
+
+
+$$c=\frac{\rho}{sin(\theta)}\ \ \ m">
+  
+
+  
+  
+  <meta name="keywords" content="图像处理,目标检测">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="HoughTransform"/>
+
+  <meta property="og:site_name" content="Heisenberg"/>
+
+  
+  <meta property="og:image" content="/heisenberg.github.io/favicon.ico"/>
+  
+
+  <link href="/heisenberg.github.io/favicon.ico" rel="icon">
+  <link rel="alternate" href="/heisenberg.github.io/atom.xml" title="Heisenberg" type="application/atom+xml">
+  <link rel="stylesheet" href="/heisenberg.github.io/css/style.css" media="screen" type="text/css"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+
+
+<body>
+<!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/heisenberg.github.io/">Heisenberg</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+        <li><a href="/heisenberg.github.io/">Home</a></li>
+      
+        <li><a href="/heisenberg.github.io/archives">Archives</a></li>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>HoughTransform</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/heisenberg.github.io/2016/09/28/2016-09-28-HoughTransform/" rel="bookmark">
+        <time class="entry-date published" datetime="2016-09-28T13:00:00.000Z">
+          2016-09-28
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <h3 id="1-Lines"><a href="#1-Lines" class="headerlink" title="1. Lines"></a>1. Lines</h3><ol>
+<li><p>笛卡尔坐标表示</p>
+<p><img src="/img/posts/HoughLine.png" alt="HoughLine"></p>
+</li>
+</ol>
+<p>$$<br>\begin{align<em>}<br>y=mx+c\ \ or\ \ Ax+By+1=0<br>\end{align</em>}<br>$$<br>   xy空间中的一条直线对应Hough空间的一个点(A,B)</p>
+<ol>
+<li><p>极坐标表示</p>
+<p><img src="/img/posts/HoughLinePolar.png" alt="HoughLinePolar"></p>
+</li>
+</ol>
+<p>$$<br>c=\frac{\rho}{sin(\theta)}\ \ \ m=-\frac{1}{tan(\theta)}<br>$$</p>
+<p>   代入公式1中，可得<br>$$<br>\rho=xcos(\theta)+ysin(\theta)<br>$$</p>
+<h3 id="2-Circles"><a href="#2-Circles" class="headerlink" title="2. Circles"></a>2. Circles</h3><p>$$<br>(x-x_0)^2+(y-y_0)^2=r^2<br>$$</p>
+<p>上述公式可以表示成参数形式<br>$$<br>x_0=x-rcos(\theta)\<br>y_0=y-rsin(\theta)<br>$$<br>注意，上面公式中的$\theta$不是自由变量，但是定义了曲线的轨迹。</p>
+<h3 id="3-Ellipse"><a href="#3-Ellipse" class="headerlink" title="3. Ellipse"></a>3. Ellipse</h3><p>我们定义一个圆到椭圆的映射<br>$$<br>\begin{bmatrix}x\y\end{bmatrix}=<br>\begin{bmatrix}cos(\rho) &amp; sin(\rho)\ -sin(\rho)&amp;cos(\rho)\end{bmatrix}<br>\begin{bmatrix}S_x\S_y\end{bmatrix}<br>\begin{bmatrix}x’\y’\end{bmatrix} +<br>\begin{bmatrix}t_x\t_y\end{bmatrix}<br>$$<br>其中\$\rho$表示方向，$(S_x,S_y)$表示尺度因子，$(t_x,t_y)$表示平移。</p>
+<p>如果我们定义<br>$$<br>a_0=t_x\ \ a_x=S_xcos(\rho)\ \ b_x=S_ysin(\rho)\<br>b_0=t_y\ \ a_y=-S_xsin(\rho)\ \ b_y=S_ycos(\rho)<br>$$</p>
+<p>那么我们可以将椭圆方程变换为<br>$$<br>x=a_0+a_xcos(\theta)+b_xsin(\theta)\<br>y=b_0+a_ycos(\theta)+b_ysin(\theta)<br>$$<br>上面的极坐标表示形式用$(a_0,b_0,a_x,b_x,a_y,b_y)$六个参数定义一个椭圆，其中$\theta$不是一个自由变量。</p>
+<p> <img src="/img/posts/HTEllipse.png" alt="HTEllipse"></p>
+<h3 id="4-参数空间分解"><a href="#4-参数空间分解" class="headerlink" title="4. 参数空间分解"></a>4. 参数空间分解</h3><h4 id="1-lines"><a href="#1-lines" class="headerlink" title="1) lines"></a>1) lines</h4><p>对于直线来说，考虑到我们可以通过图像中的信息计算出斜率，因此累积空间可以由二维降为一维。计算斜率有两种方法：</p>
+<ul>
+<li>使用图像中点的梯度方向，$m=\phi$</li>
+<li>通过图像中的一对点计算，$m=\frac{y_2-y_1}{x_2-x_1}$</li>
+</ul>
+<p>因此，直线的极坐标表示中其中一个参数$\theta$就可以计算出来</p>
+<p>$$<br>\theta=-tan^{-1}\left(\frac{1}{\phi}\right)\ \ or\ \ \theta=tan^{-1}\left(\frac{x_1-x_2}{y_2-y_1}\right)<br>$$</p>
+<h4 id="2-circles"><a href="#2-circles" class="headerlink" title="2) circles"></a>2) circles</h4><p>$$<br>v(\theta)=x(\theta)\begin{bmatrix}1\0\end{bmatrix}+y(\theta)\begin{bmatrix}0\1\end{bmatrix}<br>$$</p>
+<p>其中，<br>$$<br>x(\theta)=x_0+rcos(\theta)\ \ \ y(\theta)=y_0+rsin(\theta)<br>$$</p>
+<p>考虑它的一阶导和二阶导<br>$$<br>v’(\theta)=x’(\theta)\begin{bmatrix}1\0\end{bmatrix}+y’(\theta)\begin{bmatrix}0\1\end{bmatrix}\<br>v’’(\theta)=x’’(\theta)\begin{bmatrix}1\0\end{bmatrix}+y’’(\theta)\begin{bmatrix}0\1\end{bmatrix}<br>$$<br>其中，<br>$$<br>x’(\theta)=-rsin(\theta)\ \ \ y’(\theta)=rcos(\theta)\<br>x’’(\theta)=-rcos(\theta)\ \ \ y’’(\theta)=-rsin(\theta)<br>$$<br> <img src="/img/posts/circles_derivative.png" alt="circles_derivative"></p>
+<p>根据上图的几何关系，可得到</p>
+<p>$$<br>\phi’’(\theta)=\frac{y’’(\theta)}{x(\theta)}=\frac{y(\theta)-y_0}{x(\theta)-x_0}<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x(\theta)-x_0)+y(\theta)<br>$$</p>
+<p><img src="/img/posts/circles_geometry.png" alt="circles_geometry"></p>
+<p>$\phi’’(\theta)$可以通过$\phi’’(\theta)$与$\phi’(\theta)$的关系计算<br>$$<br>\phi’’(\theta)=-\frac{1}{\phi’(\theta)}<br>$$<br>而$\phi’(\theta)$可以通过两种方式计算</p>
+<ul>
+<li>梯度</li>
+<li>圆上的一对点</li>
+</ul>
+<p>$$<br>\phi’(\theta)=\frac{y_2-y_1}{x_2-x_1}<br>$$</p>
+<p>$$<br>x_m=\frac{1}{2}(x_1+x_2)\ \ \ y_m=\frac{1}{2}(y_1+y_2)<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x_m-x_0)+y_m<br>$$</p>
+<h4 id="3-Ellipse-1"><a href="#3-Ellipse-1" class="headerlink" title="3) Ellipse"></a>3) Ellipse</h4><p>$$<br>x(\theta)=a_0+a_xcos(\theta)+b_xsin(\theta)\ \ \ y(\theta)=b_0+a_ycos(\theta)+b_ysin(\theta)\<br>x’(\theta)=-a_xsin(\theta)+b_xcos(\theta)\ \ \ y’(\theta)=-a_ysin(\theta)+b_ycos(\theta)\<br>x’’(\theta)=-a_xcos(\theta)-b_xsin(\theta)\ \ \ y’’(\theta)=-a_ycos(\theta)-b_ysin(\theta)<br>$$</p>
+<p>一阶导数和二阶导数的角度的tangent值为<br>$$<br>\phi’(\theta)=\frac{y’(\theta)}{x’(\theta))}\<br>\phi’’(\theta)=\frac{y’’(\theta)}{x’’(\theta))}<br>$$<br>与圆中类似，对于椭圆我们仍然有下面的关系<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\phi’’(\theta)<br>$$<br>然而，在椭圆中$\phi’(\theta)$和$\phi’’(\theta)$并不正交，因此，这使得$\phi’’(\theta)$的计算更加复杂。为了计算$\phi’’(\theta)$，我们使用椭圆上</p>
+<p>的两个点，他们的连线的斜率为$\phi’(\theta)$。上面公式定义的直线经过这两个点的中点$(x_m,y_m)$</p>
+<p><img src="/img/posts/eliipse_geomrtry.png" alt="eliipse_geomrtry"><br>$$<br>x_1=a_xcos(\theta_1)\ \ \ x_2=a_xcos(\theta_2)\ \ \ x(\theta)=a_xcos(\theta)\<br>y_1=b_ysin(\theta_1)\ \ \ y_2=b_ysin(\theta_2)\ \ \ y(\theta)=b_ysin(\theta)<br>$$<br>点$(x(\theta),y(\theta))$是直线与椭圆的交点，所以有<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\frac{a_x}{b_y}.\frac{y_m}{x_m}<br>$$</p>
+<p>$$<br>\phi’’(\theta)=\frac{b_y}{a_x}tan(\theta)\<br>\phi’’(\theta)=\frac{y_m}{x_m}<br>$$</p>
+<p>上式只在椭圆没有平移时成立，有平移时满足下面的公式<br>$$<br>\phi’’(\theta)=\frac{y_T-y_m}{x_T-x_m}<br>$$<br>其中$(x_T,y_T)$是两点$(x_1,y_1),(x_2,y_2)$的切线的交点。<br>$$<br>\phi’’(\theta)=\frac{AC+2BD}{2A+BC}<br>$$<br>其中<br>$$<br>A=y_1-y_2\ \ \ B=x_1-x_2\<br>C=\phi_1-\phi_2\ \ \ D=\phi_1\phi_2<br>$$</p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/heisenberg.github.io/tags/图像处理/">图像处理</a><a href="/heisenberg.github.io/tags/目标检测/">目标检测</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2016 Wang Penglin
+    
+  </p>
+</footer>
+    
+  </div>
+</div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

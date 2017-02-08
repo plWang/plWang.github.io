@@ -1,0 +1,241 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>flask Dev in Practice | plWang&#39;s Blog</title>
+
+  
+  <meta name="author" content="Wang Penglin">
+  
+
+  
+  <meta name="description" content="1. 项目组织使用flask时你需要自己组织自己的项目，这具有很大的灵活性，但你不得不思考，如何更好的组织自己的项目，以便于开发和部署。
+在开发一个稍微复杂一点的项目时，使用包的方式组织项目时一个不错的方法。基于包的应用的版本库看起来就像是这样：
+123456789101112config.pyre">
+  
+
+  
+  
+  <meta name="keywords" content="flask,web开发,redis">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="flask Dev in Practice"/>
+
+  <meta property="og:site_name" content="plWang&#39;s Blog"/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+
+
+<body>
+<!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/">plWang&#39;s Blog</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+        <li><a href="/">主页</a></li>
+      
+        <li><a href="/archives">归档</a></li>
+      
+        <li><a href="/about">关于</a></li>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>flask Dev in Practice</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2016/10/29/flaskDevInPractice-md/" rel="bookmark">
+        <time class="entry-date published" datetime="2016-10-29T05:54:18.000Z">
+          2016-10-29
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <h3 id="1-项目组织"><a href="#1-项目组织" class="headerlink" title="1. 项目组织"></a>1. 项目组织</h3><p>使用flask时你需要自己组织自己的项目，这具有很大的灵活性，但你不得不思考，如何更好的组织自己的项目，以便于开发和部署。</p>
+<p>在开发一个稍微复杂一点的项目时，使用包的方式组织项目时一个不错的方法。基于包的应用的版本库看起来就像是这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">config.py</div><div class="line">requirements.txt</div><div class="line">run.py</div><div class="line">instance/</div><div class="line">  /config.py</div><div class="line">yourapp/</div><div class="line">  /__init__.py</div><div class="line">  /views.py</div><div class="line">  /models.py</div><div class="line">  /forms.py</div><div class="line">  /static/</div><div class="line">  /templates/</div></pre></td></tr></table></figure>
+<p>有关模型的定义全部放在models.py中，有关路由的定义全部放在views.py中，有关表单的定义全部放在forms.py中。</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>run.py</td>
+<td>用于启动一个开发服务器。它从你的包中获得应用的副本并运行它。</td>
+<td></td>
+</tr>
+<tr>
+<td>requirements.txt</td>
+<td>列出你的应用依赖的所有Python包</td>
+<td></td>
+</tr>
+<tr>
+<td>config.py</td>
+<td>包含了你的应用需要的大多数配置变量</td>
+<td></td>
+</tr>
+<tr>
+<td>instance/config.py</td>
+<td>这个文件包含了不应该出现在版本控制中的皮遏制变量，如密钥和数据库URI连接密码等。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/</td>
+<td>这个包里包含了你的应用</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/__init__.py</td>
+<td>这个文件初始化你的应用并把所有其它的组件组合在</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/views.py</td>
+<td>这里定义了路由。它也许需要作为一个包(yourapp/views/)，由一些包含了紧密联系的路由的模块组成。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/models.py</td>
+<td>这里定义了应用的模型。你可能需要像对待views.py一样把它分割成许多模块，作为一个包。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/static/</td>
+<td>这里包含了公共CSS, Javascript, images等</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/templates/</td>
+<td>这里放置你的应用的Jinja2模板。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-配置"><a href="#2-配置" class="headerlink" title="2. 配置"></a>2. 配置</h3><p>大多数的配置变量都可以包含在config.py中，然后在yourapp/__init__.py中加载它。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">app.config.from_object(<span class="string">'config'</span>)</div></pre></td></tr></table></figure>
+<p>对于一些不能为人所知的配置变量，比如API密钥或者数据库密钥等，我们要把它们从config.py中分离出来，并保持在版本控制之外。flask提供了一个instance文件夹，我们可以把这些配置放在instance文件夹下的config文件中，并且在yourapp/__init__.py中加载它。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">app = Flask(__name__, instance_relative_config=<span class="keyword">True</span>)</div><div class="line">app.config.from_object(<span class="string">'config'</span>)</div><div class="line">app.config.from_pyfile(<span class="string">'config.py'</span>)</div></pre></td></tr></table></figure>
+<p>同时注意要将instance文件夹保持在版本控制之外。</p>
+<p>如果你有关于多个环境的配置，可以通过将这些配置放入多个文件中，然后根据环境变量选择要加载的配置文件。它看起来应该时这个样子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">config/</div><div class="line">  __init__.py # 空的，只是用来告诉Python它是一个包。</div><div class="line">  default.py</div><div class="line">  production.py</div><div class="line">  development.py</div><div class="line">  staging.py</div></pre></td></tr></table></figure>
+<p>要在不同的环境中制定所需的变量，你可以调用<code>app.config.from_envvar(&#39;APP_CONFIG_FILE&#39;)</code>,它将加载环境变量APP_CONFIG_FILE指定的文件。在Linux系统中，你可以使用一个she’ll脚本来设置环境变量。</p>
+<p>start.sh</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">APP_CONFIG_FILE=/var/www/yourapp/config/production.py</div></pre></td></tr></table></figure>
+<p>运行<code>source start.sh</code>命令就可以设置环境变量。</p>
+<h3 id="3-使用SQLAlchemy管理数据库"><a href="#3-使用SQLAlchemy管理数据库" class="headerlink" title="3. 使用SQLAlchemy管理数据库"></a>3. 使用SQLAlchemy管理数据库</h3><p>在flask中可以使用SQLAlchemy方便的管理postgresql、MySQL、SQLite等关系型数据库。</p>
+<h4 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pip install Flask-SQLAlchemy Flask-Migrate psycopg2</div></pre></td></tr></table></figure>
+<h4 id="配置数据库URI"><a href="#配置数据库URI" class="headerlink" title="配置数据库URI"></a>配置数据库URI</h4><p>在配置文件instance/config.py中添加配置变量：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">SQLALCHEMY_DATABASE_URI = &quot;postgresql://user:passwrod@localhost/database&quot;</div></pre></td></tr></table></figure>
+<h4 id="在应用中注册数据库"><a href="#在应用中注册数据库" class="headerlink" title="在应用中注册数据库"></a>在应用中注册数据库</h4><p>我们需要在应用中引入SQLAlchemy并连接到数据库</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">## yourapp/__init__.py</span></div><div class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</div><div class="line"><span class="keyword">from</span> flask_sqlalchemy <span class="keyword">import</span> SQLAlchemy</div><div class="line"></div><div class="line">app = Flask(__name__, instance_relative_config=<span class="keyword">True</span>)</div><div class="line">app.config.from_object(<span class="string">'config'</span>)</div><div class="line">app.config.from_pyfile(<span class="string">'config.py'</span>)</div><div class="line">app.config.from_envvar(<span class="string">'APP_CONFIG_FILE'</span>)</div><div class="line">db = SQLA;chemy(app)</div><div class="line"></div><div class="line"><span class="keyword">from</span> .models <span class="keyword">import</span> Result</div></pre></td></tr></table></figure>
+<h4 id="建立数据模型"><a href="#建立数据模型" class="headerlink" title="建立数据模型"></a>建立数据模型</h4><p>在models.py中定义我们要使用的数据模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> app <span class="keyword">import</span> db</div><div class="line"><span class="keyword">from</span> sqlalchemy.dialects.postgresql <span class="keyword">import</span> JSON</div><div class="line"></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Result</span><span class="params">(db.Model)</span>:</span></div><div class="line">    __tablename__ = <span class="string">'results'</span></div><div class="line"></div><div class="line">    id = db.Column(db.Integer, primary_key=<span class="keyword">True</span>)</div><div class="line">    url = db.Column(db.String())</div><div class="line">    result_all = db.Column(JSON)</div><div class="line">    result_no_stop_words = db.Column(JSON)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, url, result_all, result_no_stop_words)</span>:</span></div><div class="line">        self.url = url</div><div class="line">        self.result_all = result_all</div><div class="line">        self.result_no_stop_words = result_no_stop_words</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="keyword">return</span> <span class="string">'&lt;id &#123;&#125;&gt;'</span>.format(self.id)</div></pre></td></tr></table></figure>
+<h4 id="数据库迁移"><a href="#数据库迁移" class="headerlink" title="数据库迁移"></a>数据库迁移</h4><h3 id="4-使用Redis建立任务队列"><a href="#4-使用Redis建立任务队列" class="headerlink" title="4. 使用Redis建立任务队列"></a>4. 使用Redis建立任务队列</h3>
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/flask/">flask</a><a href="/tags/web开发/">web开发</a><a href="/tags/redis/">redis</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+	<div id="comment">
+	
+	
+	<!-- 多说评论框 start -->
+	 <div class="ds-thread" data-thread-key="/2016/10/29/flaskDevInPractice-md/" data-title="flask Dev in Practice" data-url="https://plWang.github.io/2016/10/29/flaskDevInPractice-md/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"plwangblog"};
+	  (function() {
+	    var ds = document.createElement('script');
+	    ds.type = 'text/javascript';ds.async = true;
+	    ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+	    ds.charset = 'UTF-8';
+	    (document.getElementsByTagName('head')[0] 
+	     || document.getElementsByTagName('body')[0]).appendChild(ds);
+	  })();
+	  </script>
+	<!-- 多说公共JS代码 end -->
+	
+	</div>
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2016 Wang Penglin
+    
+  </p>
+</footer>
+    
+  </div>
+</div><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</body>
+</html>

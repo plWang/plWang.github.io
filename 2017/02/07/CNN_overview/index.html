@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>卷积神经网络（cnn）概述 | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="机器学习神经网络深度学习" />
+  
+  
+  
+  
+  <meta name="description" content="卷积神经网络一般由三种结构的层构成：
+
+卷积层（Convolution layer）
+汇聚层（Pooling layer）
+全连接层（Fully Connected Layer）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="卷积神经网络（CNN）概述">
+<meta property="og:url" content="https://plWang.github.io/2017/02/07/CNN_overview/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="卷积神经网络一般由三种结构的层构成：
+
+卷积层（Convolution layer）
+汇聚层（Pooling layer）
+全连接层（Fully Connected Layer）">
+<meta property="og:updated_time" content="2017-02-08T09:31:27.757Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="卷积神经网络（CNN）概述">
+<meta name="twitter:description" content="卷积神经网络一般由三种结构的层构成：
+
+卷积层（Convolution layer）
+汇聚层（Pooling layer）
+全连接层（Fully Connected Layer）">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-CNN_overview" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      卷积神经网络（CNN）概述
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2017/02/07/CNN_overview/" class="article-date">
+	  <time datetime="2017-02-07T11:38:00.000Z" itemprop="datePublished">2017-02-07</time>
+	</a>
+
+      
+    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
+
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>卷积神经网络一般由三种结构的层构成：</p>
+<ul>
+<li>卷积层（Convolution layer）</li>
+<li>汇聚层（Pooling layer）</li>
+<li>全连接层（Fully Connected Layer）</li>
+</ul>
+<a id="more"></a>
+<h3 id="1-卷积层（Convolution-Layer）"><a href="#1-卷积层（Convolution-Layer）" class="headerlink" title="1. 卷积层（Convolution Layer）"></a>1. 卷积层（Convolution Layer）</h3><p>卷积层是由一些可学习的滤波器集合构成的，每个滤波器在空间上（宽度和高度）都比较小，深度和输入数据一致。前向传播时，每个滤波器都在输入数据的宽度和高度上滑动，与输入数据进行卷积。</p>
+<p>卷积层的超参数主要有4个，它们控制了输出数据的尺寸。</p>
+<ul>
+<li>滤波器的数量：输出数据的深度与滤波器的数量一致</li>
+<li>滤波器的空间尺寸</li>
+<li>步长（stride）：滑动滤波器时，需要指定步长。当步长为1时，滤波器每次移动一个像素。</li>
+<li>零填充（zero-padding）：有时候会将输入数据用0在边缘进行填充，零填充可以控制输出数据的尺寸（最常用的是保持输出数据的尺寸与输入数据一致）</li>
+</ul>
+<p>输出数据在空间上的尺寸（宽和高）可以通过输入数据尺寸（W），滤波器的尺寸（F），步长（S）和零填充的数量（P）来计算。输出数据的空间尺寸为(W-F+2P)/S+1。（注意：这些超参数之间是相互限制的，如果设置不合理，输出数据的尺寸不是整数，因此需要合理的设置超参数）</p>
+<p>举例：</p>
+<p>假设输入数据体的尺寸为[227x227x3]，卷积层的尺寸F=11，步长S=4，零填充P=0，卷积层的深度为K=96。那么输出数据体的空间尺寸为(227-11+2*0)/4+1=55。输出数据的深度与卷机层滤波器的数量一致，为96。所以最终输出数据体的尺寸为[55x55x96]。</p>
+<p><strong>用矩阵乘法实现：</strong></p>
+<p>卷积层的前向传播可以用矩阵乘法的方式实现。</p>
+<ol>
+<li>输入数据的局部区域被im2col操作拉伸为列。比如，如果输入数据是[227x227x3]，要与尺寸为[11x11x3]的滤波器以步长为4进行卷积，就取输入图像中的[11x11x3]数据块，然后将其拉伸为长度为11x11x3=363的列向量。重复这一过程，因为步长为4，所以输出的宽高为(227-11)/4+1=55，所以得到im2col操作的输出矩阵X_col的尺寸为[363x3025]，其中每列是拉伸的感受野，共有55x55=3025个。</li>
+<li>卷积层的权重也被拉伸成行。举例，如果有96个尺寸为[11x11x3]的滤波器，就生成一个矩阵Ｗ_row，尺寸为[96x363]。</li>
+<li>现在卷积的结果就和两个矩阵相乘np.dot(W_row,x_col)是等价的了。在这个例子中，矩阵乘法输出是[96x3025]，给出了每个滤波器在每个位置的点积输出。</li>
+<li>结果最后重新reshape为合理的输出尺寸[55x55x96]。</li>
+</ol>
+<p>这个方法的缺点就是占用内存太多，因为在输入数据体中的某些值在X_col中被复制了多次。但是其优点是矩阵乘法有非常多的高效实现方式。</p>
+<p><strong>反向传播：</strong></p>
+<p>卷积操作的反向传播还是一个卷积，但是是和空间上翻转的滤波器进行卷积。</p>
+<h3 id="2-汇聚（池化）层（Pooling-Layer）"><a href="#2-汇聚（池化）层（Pooling-Layer）" class="headerlink" title="2. 汇聚（池化）层（Pooling Layer）"></a>2. 汇聚（池化）层（Pooling Layer）</h3><p>通常，在连续的卷积层之间会周期性地插入一个汇聚层。它的作用是逐渐降低数据体的空间尺寸，这样的话能减少网络中参数的数量，使得计算资源消耗变少，也能有效的控制过拟合。</p>
+<p>通常，汇聚层使用max操作，比如使用尺寸2x2的滤波器，以步长为2对输入数据进行降采样，那么就是从2x2个数字中取最大值。</p>
+<p>除了最大汇聚（max pooling）之外，汇聚单元还可以使用其他函数，比如平均汇聚（average pooling）或L-2范式汇聚（L2-norm pooling）。</p>
+<p><strong>反向传播：</strong></p>
+<p>pooling操作的反向传播就是将梯度只沿最大的数回传，其余位置的梯度都为0。因此，在前向传播时，通常会把最大元素的索引记录下来，这样反向传播时就很高效。</p>
+<h3 id="3-全连接层"><a href="#3-全连接层" class="headerlink" title="3. 全连接层"></a>3. 全连接层</h3><p>卷积神经网络中的全连接层与常规神经网络中一样，会计算出分类的得分。</p>
+<p><strong>全连接层转化为卷积层：</strong></p>
+<p>实际应用中，这种变换更加有用。假设一个卷积神经网络的输入是224x224x3的图像，一系列的卷积层和汇聚层操作后图数据尺寸变为7x7x512。AlexNet中使用了两个尺寸为4096的全连接层（两层尺寸分别为25088x4096, 4096x4096），最后有一个1000个神经元的全连接层用于计算分类评分（尺寸4096x1000）。我们可以将这3个全连接层中的任意一个转化为卷积层。</p>
+<ul>
+<li>针对第一个连接区域是[7x7x512]的全连接层，令其滤波器尺寸为F=7（与输入数据尺寸一致），数量为4096个，这样输出数据体的尺寸就为[1x1x4096]了。</li>
+<li>针对第二个全连接层，令其滤波器尺寸为F=1，这样输出数据体为[1x1x4096]。</li>
+<li>对最后一个全连接层，令其滤波器尺寸为F=1，这样输出为[1x1x1000]。</li>
+</ul>
+<p>这样的转化有什么作用呢？在下面的情况下可以更高效：让卷积网络在一张更大的输入图片上滑动得到多个输出，这样的转化可以让我们在单个前向传播的过程中完成上述操作。</p>
+<p>由于全连接层的限制，卷积神经网络的输入尺寸必须是固定的。例如，对于一个输入尺寸为224x224的神经网络来说，当我们想要让卷积神经网络在一张更大的输入图像（384x384）上滑动（步长32）得到多个输出时，需要将每个区域（224x224）分别输入卷积网络，最后得到6x6个位置的类别得分，这样总共需要经过6x6=36次前向传播过程才能完成。如果将全连接层转化为卷积层，那么上述过程就可以在单个前向传播的过程中完成。</p>
+<h3 id="4-层的排列和尺寸设置"><a href="#4-层的排列和尺寸设置" class="headerlink" title="4. 层的排列和尺寸设置"></a>4. 层的排列和尺寸设置</h3><h4 id="排列规律"><a href="#排列规律" class="headerlink" title="排列规律"></a>排列规律</h4><p>最常见的卷积神经网络结构可以用如下方式表示：</p>
+<p>INPUT -&gt; [ [CONV -&gt; ReLU]<em>N -&gt; POOL? ] </em>M -&gt; [FC -&gt; ReLU] *K -&gt; FC</p>
+<p>其中，*指的是重复次数，POOL?指的是一个可选的汇聚层。并且，一般N&gt;=3, M&gt;=0, K&gt;=0, 通常K&lt;3。</p>
+<h4 id="尺寸规律"><a href="#尺寸规律" class="headerlink" title="尺寸规律"></a>尺寸规律</h4><ol>
+<li><strong>输入层</strong>应该能被2整除很多次。常用数字包括32, 64, 96或224, 384和512。</li>
+<li><strong>卷积层</strong>应该使用小尺寸滤波器（比如3x3或5x5），使用步长S=1。还有就是对输入数据进行零填充。</li>
+<li><strong>汇聚层</strong>最常用的设置是2x2感受野的最大值汇聚，步长为2。最大值汇聚的感受野尺寸很少有超过3的，因为汇聚国语激烈，易造成数据信息丢失。</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/深度学习/">深度学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2016/12/06/cs231n-Assignment2-Part1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">CS231n课程作业2-Part1：基本神经网络的模块化实现</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-卷积层（Convolution-Layer）"><span class="toc-number">1.</span> <span class="toc-text">1. 卷积层（Convolution Layer）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-汇聚（池化）层（Pooling-Layer）"><span class="toc-number">2.</span> <span class="toc-text">2. 汇聚（池化）层（Pooling Layer）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-全连接层"><span class="toc-number">3.</span> <span class="toc-text">3. 全连接层</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-层的排列和尺寸设置"><span class="toc-number">4.</span> <span class="toc-text">4. 层的排列和尺寸设置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#排列规律"><span class="toc-number">4.1.</span> <span class="toc-text">排列规律</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#尺寸规律"><span class="toc-number">4.2.</span> <span class="toc-text">尺寸规律</span></a></li></ol></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>

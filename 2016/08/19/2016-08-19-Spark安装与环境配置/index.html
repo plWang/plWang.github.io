@@ -1,0 +1,239 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>Spark安装与环境配置 | Heisenberg</title>
+
+  
+  <meta name="author" content="Wang Penglin">
+  
+
+  
+  <meta name="description" content="Spark安装与环境配置1. Spark安装在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。
+
+下载Spark
+访问Spark下载页
+选择Spark最新版的pre-build安装包下载
+
+
+解压
+ 1tar zvf spark-2.0">
+  
+
+  
+  
+  <meta name="keywords" content="-Spark -Python -大数据">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="Spark安装与环境配置"/>
+
+  <meta property="og:site_name" content="Heisenberg"/>
+
+  
+  <meta property="og:image" content="/heisenberg.github.io/favicon.ico"/>
+  
+
+  <link href="/heisenberg.github.io/favicon.ico" rel="icon">
+  <link rel="alternate" href="/heisenberg.github.io/atom.xml" title="Heisenberg" type="application/atom+xml">
+  <link rel="stylesheet" href="/heisenberg.github.io/css/style.css" media="screen" type="text/css"><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+</head>
+
+
+<body>
+<!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/heisenberg.github.io/">Heisenberg</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+        <li><a href="/heisenberg.github.io/">Home</a></li>
+      
+        <li><a href="/heisenberg.github.io/archives">Archives</a></li>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>Spark安装与环境配置</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/heisenberg.github.io/2016/08/19/2016-08-19-Spark安装与环境配置/" rel="bookmark">
+        <time class="entry-date published" datetime="2016-08-19T01:00:00.000Z">
+          2016-08-19
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <h1 id="Spark安装与环境配置"><a href="#Spark安装与环境配置" class="headerlink" title="Spark安装与环境配置"></a>Spark安装与环境配置</h1><h2 id="1-Spark安装"><a href="#1-Spark安装" class="headerlink" title="1. Spark安装"></a>1. Spark安装</h2><p>在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。</p>
+<ol>
+<li>下载Spark<ul>
+<li>访问Spark下载页</li>
+<li>选择Spark最新版的pre-build安装包下载</li>
+</ul>
+</li>
+<li><p>解压</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tar zvf spark-2.0.0-bin-hadoop2.7.tgz</div></pre></td></tr></table></figure>
+</li>
+<li><p>移动到有效目录下  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">mv spark-2.0.0-bin-hadoop2.7.tgz /srv/</div></pre></td></tr></table></figure>
+</li>
+<li><p>创建指向该版本Spark的链接  </p>
+<figure class="highlight plain"><figcaption><span>-s</span><a href="/srv/spark-2.0.0-bin-hadoop2.7.tgz">/srv/spark```</a></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">5. 修改bash配置，设置SPARK_HOME环境变量。在ubuntu上，只要修改~/.bash_profile或～/.bash_rc文件，添加下面的语句</div></pre></td></tr></table></figure>
+<p> export SPARK_HOME=/srv/spark<br> export PATH=$SPARK_HOME/bin:$PATH  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">6. source这些配置或重启终端后，运行pyspark命令，如果能正常打开pyspark解释器，则证明安装成功。</div><div class="line"></div><div class="line">## 2. 在Spark中使用IPython Notebook</div><div class="line">IPython Notebook是交互的呈现科学和理论的必备工具，它能够集成文本和python代码。</div><div class="line"></div><div class="line">1. 为Spark创建一个IPython notebook配置  </div><div class="line">    ```ipython profile create spark</div></pre></td></tr></table></figure>
+</li>
+<li><p>创建文件～/.ipython/profile_spark/startup/00-pyspark-setup.py，添加如下代码：  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">import os</div><div class="line">import sys</div><div class="line"></div><div class="line">#Configure the environment</div><div class="line">if &apos;SPARK_HOME&apos; not in os.environ:</div><div class="line">    os.environ[&apos;SPARK_HOME&apos;] = &apos;/srv/spark&apos;</div><div class="line">#create a variable for our root path</div><div class="line">SPARK_HOME = os.environ[&apos;SPARK_HOME&apos;]</div><div class="line"></div><div class="line">#Add the Pyspark/py4j to the Python Path</div><div class="line">sys.path.insert(0, os.path.join(SPARK_HOME, &quot;python&quot;, &quot;build&quot;))</div><div class="line">sys.path.insert(0, os.path.join(SPARK_HOME, &quot;python&quot;))</div></pre></td></tr></table></figure>
+</li>
+<li><p>使用刚刚的配置来启动iPython notebook  </p>
+ <figure class="highlight plain"><figcaption><span>notebook --profile spark```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">## 3. 测试ipython notebook的spark配置是否成功</div></pre></td></tr></table></figure>
+<p> from pyspark import  SparkContext<br> try:  </p>
+<pre><code>sc.stop() #停止以前的SparkContext，要不然下面创建工作会失败  
+</code></pre><p> except:  </p>
+<pre><code>pass
+</code></pre><p> sc = SparkContext( ‘local’, ‘pyspark’)</p>
+<p> def isprime(n):</p>
+<pre><code>&quot;&quot;&quot;
+check if integer n is a prime
+&quot;&quot;&quot;
+# make sure n is a positive integer
+n = abs(int(n))
+# 0 and 1 are not primes
+if n &lt; 2:
+    return False
+# 2 is the only even prime number
+if n == 2:
+    return True
+# all other even numbers are not primes
+if not n &amp; 1:
+    return False
+# range starts with 3 and only needs to go up the square root of n
+# for all odd numbers
+for x in range(3, int(n**0.5)+1, 2):
+    if n % x == 0:
+        return False
+return True
+</code></pre><h1 id="Create-an-RDD-of-numbers-from-0-to-1-000-000"><a href="#Create-an-RDD-of-numbers-from-0-to-1-000-000" class="headerlink" title="Create an RDD of numbers from 0 to 1,000,000"></a>Create an RDD of numbers from 0 to 1,000,000</h1><p> nums = sc.parallelize(xrange(1000000))</p>
+<h1 id="Compute-the-number-of-primes-in-the-RDD"><a href="#Compute-the-number-of-primes-in-the-RDD" class="headerlink" title="Compute the number of primes in the RDD"></a>Compute the number of primes in the RDD</h1><p> print nums.filter(isprime).count()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">运行上面的代码，如果能够正确计算得到一个数字并且没有错误发生，那么说明ipython的spark配置就成功了。</div><div class="line"></div><div class="line">需要注意：  </div><div class="line">ipython在启动时会自动加载本地spark配置创建一个SparkContext，所以可能需要在程序开头加上</div></pre></td></tr></table></figure>
+<p> try:  </p>
+<pre><code>sc.stop() #停止以前的SparkContext，要不然下面创建工作会失败  
+</code></pre><p> except:  </p>
+<pre><code>pass
+</code></pre><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">这段代码，停止以前的SparkContext，然后再创建新的SparkContext。</div><div class="line"></div><div class="line">## 4. 编写Spark应用</div><div class="line">除了在pyspark命令行或者ipython notebook中使用Spark，我们也可以在本地编写一个Spark应用，下面以一个简单的wordCount应用为例。</div></pre></td></tr></table></figure>
+<p> from pyspark import SparkContext, SparkConf<br> from operator import add</p>
+<p> APP_NAME= “My Spark Application”</p>
+<p> def tokenize(text):</p>
+<pre><code>return text.split()
+</code></pre><p> def main(sc):</p>
+<pre><code>text = sc.textFile(&quot;./cs100/lab1/shakespeare.txt&quot;)
+words = text.flatMap(tokenize)
+print words
+words_tuple = words.map(lambda x: (x, 1))
+words_count = words_tuple.reduceByKey(add)
+words_count.saveAsTextFile(&apos;wc&apos;)
+</code></pre><p> if <strong>name</strong> == “<strong>main</strong>“:</p>
+<pre><code>#configure Spark
+conf = SparkConf().setAppName(APP_NAME)
+conf = conf.setMaster(&quot;local[*]&quot;)
+sc = SparkContext(conf=conf)
+
+main(sc)
+</code></pre><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">上面这段程序列出了一个Spark应用所需的东西：导入Python库，模块常量，用于调试和Spark UI的可是别的应用名称，</div><div class="line">还有作为驱动程序的一些主要分析方法学。在ifmain中，我们创建了SparkContext，使用了配置好的context执行main。</div><div class="line"></div><div class="line">这段程序从文本文件中创建了一个RDD，  </div><div class="line">    ```text = sc.textFile(&quot;./cs100/lab1/shakespeare.txt&quot;)</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>然后，将文本拆分为单词<br>    <figure class="highlight plain"><figcaption><span>= text.flatMap(tokenize)```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">将每个单词映射为一个键值对，其中键是单词，值为１，然后使用reduceByKey计算每个键的总数。</div><div class="line">最后将统计结果写入wc文件中。</div><div class="line"></div><div class="line">使用spark-submit命令来运行这段代码：  </div><div class="line">    ```spark-submit demo.py</div></pre></td></tr></table></figure></p>
+<p>运行结束后，我们可以看到在当前目录下有个wc目录<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ls wc  </div><div class="line">part-00000  part-00001  _SUCCESS</div></pre></td></tr></table></figure></p>
+<p>每个part文件表示本机上的进程计算得到的最终RDD。查看每个part文件，就能够看到字数统计的元组。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">$ head wc/part-00000</div><div class="line">(u&apos;fawn&apos;, 11)</div><div class="line">(u&apos;considered-&apos;, 1)</div><div class="line">(u&apos;Fame,&apos;, 3)</div><div class="line">(u&apos;mustachio&apos;, 1)</div><div class="line">(u&apos;protested,&apos;, 1)</div><div class="line">(u&apos;sending.&apos;, 3)</div><div class="line">(u&apos;offendeth&apos;, 1)</div><div class="line">(u&apos;instant;&apos;, 1)</div><div class="line">(u&apos;scold&apos;, 4)</div><div class="line">(u&apos;Sergeant.&apos;, 1)</div></pre></td></tr></table></figure></p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="http://blog.jobbole.com/86232/" target="_blank" rel="external">Spark入门（Python版）</a></p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/heisenberg.github.io/tags/Spark-Python-大数据/">-Spark -Python -大数据</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2016 Wang Penglin
+    
+  </p>
+</footer>
+    
+  </div>
+</div><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+</body>
+</html>

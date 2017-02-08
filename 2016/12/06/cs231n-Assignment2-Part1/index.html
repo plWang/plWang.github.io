@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>cs231n课程作业2-part1：基本神经网络的模块化实现 | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="机器学习神经网络" />
+  
+  
+  
+  
+  <meta name="description" content="本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的Github.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CS231n课程作业2-Part1：基本神经网络的模块化实现">
+<meta property="og:url" content="https://plWang.github.io/2016/12/06/cs231n-Assignment2-Part1/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的Github.">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/BNcircuit.png">
+<meta property="og:updated_time" content="2017-02-08T09:30:55.865Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CS231n课程作业2-Part1：基本神经网络的模块化实现">
+<meta name="twitter:description" content="本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的Github.">
+<meta name="twitter:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/BNcircuit.png">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-cs231n-Assignment2-Part1" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      CS231n课程作业2-Part1：基本神经网络的模块化实现
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2016/12/06/cs231n-Assignment2-Part1/" class="article-date">
+	  <time datetime="2016-12-06T03:28:00.000Z" itemprop="datePublished">2016-12-06</time>
+	</a>
+
+      
+    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
+
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的<a href="https://github.com/plWang/" target="_blank" rel="external">Github</a>.</p>
+<a id="more"></a>
+<h4 id="1-神经网络的模块化实现"><a href="#1-神经网络的模块化实现" class="headerlink" title="1. 神经网络的模块化实现"></a>1. 神经网络的模块化实现</h4><p><strong>1. 全连接层（Affine Layer）</strong></p>
+<p>前向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">affine_forward</span><span class="params">(x, w, b)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the forward pass for an affine (fully-connected) layer.</div><div class="line"></div><div class="line">    The input x has shape (N, d_1, ..., d_k) and contains a minibatch of N</div><div class="line">    examples, where each example x[i] has shape (d_1, ..., d_k). We will</div><div class="line">    reshape each input into a vector of dimension D = d_1 * ... * d_k, and</div><div class="line">    then transform it to an output vector of dimension M.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: A numpy array containing input data, of shape (N, d_1, ..., d_k)</div><div class="line">    - w: A numpy array of weights, of shape (D, M)</div><div class="line">    - b: A numpy array of biases, of shape (M,)</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: output, of shape (N, M)</div><div class="line">    - cache: (x, w, b)</div><div class="line">    """</div><div class="line">    out = x.dot(w) + b</div><div class="line">    cache = (x, w)</div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">affine_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">'''</span></div><div class="line">	omputes the backward pass for an affine layer.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - dout: Upstream derivative, of shape (N, M)</div><div class="line">    - cache: Tuple of:</div><div class="line">      - x: Input data, of shape (N, d_1, ... d_k)</div><div class="line">      - w: Weights, of shape (D, M)</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - dx: Gradient with respect to x, of shape (N, d1, ..., d_k)</div><div class="line">    - dw: Gradient with respect to w, of shape (D, M)</div><div class="line">    - db: Gradient with respect to b, of shape (M,)</div><div class="line">	'''</div><div class="line">    dx = dout.dor(w.T)</div><div class="line">    dw = x.T.dot(dout)</div><div class="line">    db = np.sum(dout, axis=<span class="number">0</span>)</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> dx, dw, db</div></pre></td></tr></table></figure>
+<p><strong>2. ReLU层</strong></p>
+<p>前向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">relu_froward</span><span class="params">(x)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the forward pass for a layer of rectified linear units (ReLUs).</div><div class="line"></div><div class="line">    Input:</div><div class="line">    - x: Inputs, of any shape</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: Output, of the same shape as x</div><div class="line">    - cache: x</div><div class="line">    """</div><div class="line">    out = np.maximum(x, <span class="number">0</span>)</div><div class="line">    cache = x</div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">relu_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the backward pass for a layer of rectified linear units (ReLUs).</div><div class="line"></div><div class="line">    Input:</div><div class="line">    - dout: Upstream derivatives, of any shape</div><div class="line">    - cache: Input x, of same shape as dout</div><div class="line"></div><div class="line">    Returns:</div><div class="line">    - dx: Gradient with respect to x</div><div class="line">    """</div><div class="line">    x = cache</div><div class="line">    dx = dout * (x &gt;= <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> dx</div></pre></td></tr></table></figure>
+<p><strong>损失函数</strong></p>
+<p><strong>3. softmax层</strong></p>
+<p>损失函数<br>$$<br>\textstyle L_i = -log(\frac{e^{f_{y_i}}}{\sum_je^{f_j}}) = -f_{y_i} + log(\sum_je^{f_i})<br>$$<br>设$p_i = \frac{e^{f_{y_i}}}{\sum_je^{fj}}$, 则损失函数的梯度为<br>$$<br>\frac{\partial L_i}{\partial y_i} = -\frac{1}{p_i} \frac{\partial p_i}{\partial y_i} = -[i=j] + p_j<br>$$<br>参考<a href="cs231nNotes.md">cs231n笔记-损失函数</a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">softmax_loss</span><span class="params">(x, y)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Computes the loss and gradient for softmax classification.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of shape (N, C) where x[i, j] is the score for the jth class</div><div class="line">      for the ith input.</div><div class="line">    - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and</div><div class="line">      0 &lt;= y[i] &lt; C</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - loss: Scalar giving the loss</div><div class="line">    - dx: Gradient of the loss with respect to x</div><div class="line">    """</div><div class="line">    probs = np.exp(x - np.max(x, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>))</div><div class="line">    probs /= np.sum(probs, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>)</div><div class="line">    N = x.shape[<span class="number">0</span>]</div><div class="line">    loss = -np.sum(np.log(probs[np.arange(N), y])) / N</div><div class="line">    <span class="comment"># gradient</span></div><div class="line">    dx = probs.copy()</div><div class="line">    dx[np.arange(N), y] -= <span class="number">1</span></div><div class="line">    dx /= N</div><div class="line">    <span class="keyword">return</span> loss, dx</div></pre></td></tr></table></figure>
+<p><strong>4. svm_loss层</strong></p>
+<p>损失函数<br>$$<br>L_i=\sum_{j \neq y_i}{max(0,s_j-s_{y_i}+1)}<br>$$<br>其梯度</p>
+<p>对正确分类的行的梯度<br>$$<br>\bigtriangledown_{w_{y_i}}L_i = -(\sum_{j \neq y_i}\mathbb{1}(\omega_j^Tx_i - \omega_{y_i}^Tx_i + \Delta &gt; 0))x_i<br>$$<br>对不正确分类的行的梯度<br>$$<br>\bigtriangledown_{w_j}L_i = \mathbb{1}(\omega_j^Tx_i - \omega_{y_i}^Tx_i + \Delta &gt; 0)x_i<br>$$<br>即<br>$$<br>Q_{i,k} =<br>\begin{cases}<br>\bigtriangledown_{\omega_{y_i}}L_i \quad if \ j=y_i \\<br>\bigtriangledown_{\omega_{j}}L_i \quad otherwise<br>\end{cases}<br>$$</p>
+<p>$$<br>\bigtriangledown_\omega L = \frac{1}{m}(Q^TX)^T = \frac{1}{N}X^TQ<br>$$</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">svm_loss</span><span class="params">(x, y)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Computes the loss and gradient using for multiclass SVM classification.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of shape (N, C) where x[i, j] is the score for the jth class</div><div class="line">      for the ith input.</div><div class="line">    - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and</div><div class="line">      0 &lt;= y[i] &lt; C</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - loss: Scalar giving the loss</div><div class="line">    - dx: Gradient of the loss with respect to x</div><div class="line">    """</div><div class="line">    N = x.shape[<span class="number">0</span>]</div><div class="line">    correct_class_score = x[np.arange(N), y]</div><div class="line">    margins = np.maximum(<span class="number">0</span>, x-correct_class_score[:, nexaxis] + <span class="number">1.0</span>)</div><div class="line">    margins[np.arange(N), y] = <span class="number">0</span></div><div class="line">    loss = np.sum(margins) / N</div><div class="line">    </div><div class="line">    <span class="comment">#gradient</span></div><div class="line">    num_pos = np.sum(margins&gt;<span class="number">0</span>, axis=<span class="number">1</span>)</div><div class="line">    dx = np.zeros_like(x)</div><div class="line">    dx[margins &gt; <span class="number">0</span>] = <span class="number">1</span></div><div class="line">    dx[np.arange(N), y] -= num_pos</div><div class="line">    dx /= N</div><div class="line">    <span class="keyword">return</span> loss, dx</div></pre></td></tr></table></figure>
+<h4 id="2-Batch-Normalization实现"><a href="#2-Batch-Normalization实现" class="headerlink" title="2. Batch Normalization实现"></a>2. Batch Normalization实现</h4><p><strong>前向传播</strong></p>
+<p>要注意的是，在训练和测试阶段，BatchNorm的实现方式是不同的。训练阶段时，batchnorm层使用输入的mini-batch数据的均值和方差进行归一化；而测试阶段时，使用的则是running_mean和running_var来进行归一化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">batchnorm_forward</span><span class="params">(x, gamma, beta, bn_param)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Input:</div><div class="line">    - x: Data of shape (N, D)</div><div class="line">    - gamma: Scale parameter of shape (D,)</div><div class="line">    - beta: Shift paremeter of shape (D,)</div><div class="line">    - bn_param: Dictionary with the following keys:</div><div class="line">      - mode: 'train' or 'test'; required</div><div class="line">      - eps: Constant for numeric stability</div><div class="line">      - momentum: Constant for running mean / variance.</div><div class="line">      - running_mean: Array of shape (D,) giving running mean of features</div><div class="line">      - running_var Array of shape (D,) giving running variance of features</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: of shape (N, D)</div><div class="line">    - cache: A tuple of values needed in the backward pass</div><div class="line">    """</div><div class="line">    mode = bn_params[<span class="string">'mode'</span>]</div><div class="line">    eps = bn_params.get(<span class="string">'eps'</span>, <span class="number">1e-5</span>)</div><div class="line">    momentum = bn_params.get(<span class="string">'momentum'</span>, <span class="number">0.9</span>)</div><div class="line">    </div><div class="line">    N, D = x.shape</div><div class="line">    running_mean = bn_params.get(<span class="string">'running_mean'</span>, np.zeros(D, dtype=x.dtype))</div><div class="line">    running_var = bn_prams.get(<span class="string">'running_var'</span>, np.zeros(D, dtype=x.dtype))</div><div class="line">    </div><div class="line">    sample_mean = np.mean(x, axis=<span class="number">0</span>)</div><div class="line">    sample_var = np.var(x, axis=<span class="number">0</span>)</div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        x_normalized = (x - sample_mean) / np.sqrt(sample_var + eps)</div><div class="line">        out = gamma * x + beta</div><div class="line">        </div><div class="line">        running_mean = momentum * running_mean + (<span class="number">1</span> - momemtum) * sample_mean</div><div class="line">        running_var = momentum * running_var + (<span class="number">1</span> - momentum) * sample_var</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        x_normalized = (x - running_mean) / np.sqrt(running_var + eps)</div><div class="line">        out = gamma * x_normalized + beta</div><div class="line">    <span class="keyword">else</span>:</div><div class="line">        <span class="keyword">raise</span> ValueError(<span class="string">'Invalid forward batchnorm mode "%s"'</span>% mode)</div><div class="line">    </div><div class="line">    cache = (x_normalized, gamma, beta, sample_mean, sample_var, x, eps)</div><div class="line">    <span class="comment"># Store the updated running means back into bn_param</span></div><div class="line">    bn_param[<span class="string">'running_mean'</span>] = running_mean</div><div class="line">    bn_param[<span class="string">'running_var'</span>] = running_var</div><div class="line"></div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p><strong>后向传播</strong></p>
+<p>batchnorm层的的计算线路图如下：</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/BNcircuit.png" alt="BNcircuit"></p>
+<p>按照链式法则，可以计算出各个步骤的梯度。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">batchnorm_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">  <span class="string">"""</span></div><div class="line">  Backward pass for batch normalization.</div><div class="line">  </div><div class="line">  For this implementation, you should write out a computation graph for</div><div class="line">  batch normalization on paper and propagate gradients backward through</div><div class="line">  intermediate nodes.</div><div class="line">  </div><div class="line">  Inputs:</div><div class="line">  - dout: Upstream derivatives, of shape (N, D)</div><div class="line">  - cache: Variable of intermediates from batchnorm_forward.</div><div class="line">  </div><div class="line">  Returns a tuple of:</div><div class="line">  - dx: Gradient with respect to inputs x, of shape (N, D)</div><div class="line">  - dgamma: Gradient with respect to scale parameter gamma, of shape (D,)</div><div class="line">  - dbeta: Gradient with respect to shift parameter beta, of shape (D,)</div><div class="line">  """</div><div class="line">  N, D = dout.shape</div><div class="line">  x_normalized, gamma, beta, sample_mean, sample_var, x, eps = cache</div><div class="line">    </div><div class="line">  <span class="comment"># out = gamma * x_normalized + beta (N, D)</span></div><div class="line">  dx_normalized = gamma * dout  <span class="comment"># (N, D)</span></div><div class="line">  dgamma = np.sum(dout * x_normalized, axis=<span class="number">0</span>)  <span class="comment"># (D,)</span></div><div class="line">  dbeta = np.sum(dout, axis=<span class="number">0</span>)  <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  <span class="comment"># x_normalized = x_mu * ivar</span></div><div class="line">  ivar = <span class="number">1.0</span> / np.sqrt(sample_var + eps) </div><div class="line">  x_mu = x - sample_mean  <span class="comment"># (N, D)</span></div><div class="line">  dx_mu1 = ivar * dx_normalized  <span class="comment">#(N, D)</span></div><div class="line">  divar = np.sum(x_mu * dx_normalized, axis=<span class="number">0</span>)  <span class="comment">#(D, )</span></div><div class="line">    </div><div class="line">  <span class="comment"># ivar = 1 / std</span></div><div class="line">  std = np.sqrt(sample_var + eps)   <span class="comment"># (D, )</span></div><div class="line">  dstd = - <span class="number">1.0</span> / np.square(std) * divar  <span class="comment"># (D, )</span></div><div class="line">    </div><div class="line">  <span class="comment"># std = sqrt(sample_var + eps)</span></div><div class="line">  dsample_var = <span class="number">0.5</span> / np.sqrt(sample_var + eps) * dstd  <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  <span class="comment"># sample_var = 1/N * sum(sq)</span></div><div class="line">  dsq = <span class="number">1.0</span>/N * np.ones([N, D]) * dsample_var  <span class="comment"># (D, )</span></div><div class="line"></div><div class="line">  <span class="comment"># sq = x_mu^2</span></div><div class="line">  dx_mu2 = <span class="number">2</span> * x_mu * dsq   <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  dx_mu = dx_mu1 + dx_mu2   <span class="comment"># (N, D)</span></div><div class="line">  </div><div class="line">  <span class="comment"># x_mu = x - sample_mean</span></div><div class="line">  dsample_mean = - np.sum(dx_mu, axis=<span class="number">0</span>)   <span class="comment"># (D, ) </span></div><div class="line">  dx1 = <span class="number">1</span> * dx_mu  <span class="comment"># (N, D)</span></div><div class="line"></div><div class="line">  <span class="comment"># sample_mean = 1/N * sum(x_i)</span></div><div class="line">  dx2 = <span class="number">1.0</span> /N * np.ones([N,D]) * dsample_mean  <span class="comment"># (N, D)  </span></div><div class="line"></div><div class="line">  dx = dx1 + dx2  <span class="comment"># (N, D)</span></div><div class="line"></div><div class="line">  <span class="keyword">return</span> dx, dgamma, dbeta</div></pre></td></tr></table></figure>
+<p>参考<a href="https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html" target="_blank" rel="external">Understanding the backward pass through Batch Normalization Layer</a>，上面有非常详细的推导。</p>
+<h4 id="3-Dropout实现"><a href="#3-Dropout实现" class="headerlink" title="3. Dropout实现"></a>3. Dropout实现</h4><p><strong>前向传播</strong></p>
+<p>需要注意的是，我们只在训练时才进行dropout，而在测试阶段不需要执行。同时在训练时我们需要对输出按照p进行范围调整，从而让前向传播在测试时保持不变。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">dropout_forward</span><span class="params">(x, dropout_param)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Performs the forward pass for (inverted) dropout.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of any shape</div><div class="line">    - dropout_param: A dictionary with the following keys:</div><div class="line">      - p: Dropout parameter. We drop each neuron output with probability p.</div><div class="line">      - mode: 'test' or 'train'. If the mode is train, then perform dropout;</div><div class="line">        if the mode is test, then just return the input.</div><div class="line">      - seed: Seed for the random number generator. Passing seed makes this</div><div class="line">        function deterministic, which is needed for gradient checking but not in</div><div class="line">        real networks.</div><div class="line"></div><div class="line">    Outputs:</div><div class="line">    - out: Array of the same shape as x.</div><div class="line">    - cache: A tuple (dropout_param, mask). In training mode, mask is the dropout</div><div class="line">      mask that was used to multiply the input; in test mode, mask is None.</div><div class="line">    """</div><div class="line">    p, mode = dropout_param[<span class="string">'p'</span>], dropout_param[<span class="string">'mode'</span>]</div><div class="line">    <span class="keyword">if</span> <span class="string">'seed'</span> <span class="keyword">in</span> dropout_param:</div><div class="line">        np.random.seed(dropout_param[<span class="string">'seed'</span>])</div><div class="line">        </div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        mask = (np.random.rand(*x.shape) &gt; p) / p</div><div class="line">        out = mask * x</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        out = x</div><div class="line">        </div><div class="line">    cache = (dropout_param, mask)</div><div class="line">    out = out.astype(x.dtype, copy=<span class="keyword">False</span>)</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">dropout_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Perform the backward pass for (inverted) dropout.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - dout: Upstream derivatives, of any shape</div><div class="line">    - cache: (dropout_param, mask) from dropout_forward.</div><div class="line">    """</div><div class="line">    dropout_param, mask = cache</div><div class="line">    mode = dropout_param[<span class="string">'mode'</span>]</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        dx = dout * mask</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        dx = dout</div><div class="line">        </div><div class="line">    <span class="keyword">return</span> dx</div></pre></td></tr></table></figure>
+<h4 id="2-多层全连接神经网络（Fully-Connected-Network）的实现"><a href="#2-多层全连接神经网络（Fully-Connected-Network）的实现" class="headerlink" title="2. 多层全连接神经网络（Fully Connected Network）的实现"></a>2. 多层全连接神经网络（Fully Connected Network）的实现</h4><p>实现一个任意层数的全连接神经网络，网络结构如下：</p>
+<p>{ affine - [batch norm] - relu - [dropout] } × (L - 1) - affine - softmax</p>
+<p>其中[]代表可选的，{}内的重复L-1层。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">FullyConnectedNet</span><span class="params">(object)</span>:</span></div><div class="line"></div><div class="line">  <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, hidden_dims, input_dim=<span class="number">3</span>*<span class="number">32</span>*<span class="number">32</span>, num_classes=<span class="number">10</span>,</span></span></div><div class="line">               dropout=<span class="number">0</span>, use_batchnorm=False, reg=<span class="number">0.0</span>,</div><div class="line">               weight_scale=<span class="number">1e-2</span>, dtype=np.float32, seed=None):</div><div class="line"></div><div class="line">    self.use_batchnorm = use_batchnorm</div><div class="line">    self.use_dropout = dropout &gt; <span class="number">0</span></div><div class="line">    self.reg = reg</div><div class="line">    self.num_layers = <span class="number">1</span> + len(hidden_dims)</div><div class="line">    self.dtype = dtype</div><div class="line">    self.params = &#123;&#125;</div><div class="line"></div><div class="line">    layer_dims = [input_dim] + hidden_dims + [num_classes]</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)] = np.random.normal(loc=<span class="number">0.0</span>, scale=weight_scale, size=[layer_dims[i], layer_dims[i+<span class="number">1</span>]])</div><div class="line">        self.params[<span class="string">'b'</span> + str(i+<span class="number">1</span>)] = np.zeros(layer_dims[i+<span class="number">1</span>])</div><div class="line">        <span class="keyword">if</span> self.use_batchnorm <span class="keyword">and</span> i &lt; self.num_layers<span class="number">-1</span>:</div><div class="line">            self.params[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)] = np.ones(layer_dims[i+<span class="number">1</span>])</div><div class="line">            self.params[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)] = np.zeros(layer_dims[i+<span class="number">1</span>])</div><div class="line"></div><div class="line">    <span class="comment"># When using dropout we need to pass a dropout_param dictionary to each</span></div><div class="line">    <span class="comment"># dropout layer so that the layer knows the dropout probability and the mode</span></div><div class="line">    <span class="comment"># (train / test). You can pass the same dropout_param to each dropout layer.</span></div><div class="line">    self.dropout_param = &#123;&#125;</div><div class="line">    <span class="keyword">if</span> self.use_dropout:</div><div class="line">      self.dropout_param = &#123;<span class="string">'mode'</span>: <span class="string">'train'</span>, <span class="string">'p'</span>: dropout&#125;</div><div class="line">      <span class="keyword">if</span> seed <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">        self.dropout_param[<span class="string">'seed'</span>] = seed</div><div class="line">    </div><div class="line">    <span class="comment"># With batch normalization we need to keep track of running means and</span></div><div class="line">    <span class="comment"># variances, so we need to pass a special bn_param object to each batch</span></div><div class="line">    <span class="comment"># normalization layer. You should pass self.bn_params[0] to the forward pass</span></div><div class="line">    <span class="comment"># of the first batch normalization layer, self.bn_params[1] to the forward</span></div><div class="line">    <span class="comment"># pass of the second batch normalization layer, etc.</span></div><div class="line">    self.bn_params = []</div><div class="line">    <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">      self.bn_params = [&#123;<span class="string">'mode'</span>: <span class="string">'train'</span>&#125; <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers - <span class="number">1</span>)]</div><div class="line">    </div><div class="line">    <span class="comment"># Cast all parameters to the correct datatype</span></div><div class="line">    <span class="keyword">for</span> k, v <span class="keyword">in</span> self.params.iteritems():</div><div class="line">      self.params[k] = v.astype(dtype)</div><div class="line"></div><div class="line"></div><div class="line">  <span class="function"><span class="keyword">def</span> <span class="title">loss</span><span class="params">(self, X, y=None)</span>:</span></div><div class="line">    X = X.astype(self.dtype)</div><div class="line">    mode = <span class="string">'test'</span> <span class="keyword">if</span> y <span class="keyword">is</span> <span class="keyword">None</span> <span class="keyword">else</span> <span class="string">'train'</span></div><div class="line"></div><div class="line">    <span class="comment"># Set train/test mode for batchnorm params and dropout param since they</span></div><div class="line">    <span class="comment"># behave differently during training and testing.</span></div><div class="line">    <span class="keyword">if</span> self.dropout_param <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">      self.dropout_param[<span class="string">'mode'</span>] = mode   </div><div class="line">    <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">      <span class="keyword">for</span> bn_param <span class="keyword">in</span> self.bn_params:</div><div class="line">        bn_param[mode] = mode</div><div class="line"></div><div class="line">    <span class="comment"># forward pass</span></div><div class="line">    affine_caches, bn_caches, relu_caches, dropout_caches = [], [], [], []</div><div class="line">    x = X</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        b = self.params[<span class="string">'b'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        affine_out, affine_cache = affine_forward(x, w, b)</div><div class="line">        affine_caches.append(affine_cache)</div><div class="line">        <span class="keyword">if</span> i &lt; self.num_layers<span class="number">-1</span>:</div><div class="line">            <span class="keyword">if</span> self.use_dropout:</div><div class="line">                affine_out, dropout_cache = dropout_forward(affine_out, self.dropout_param)</div><div class="line">                dropout_caches.append(dropout_cache)</div><div class="line">            <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">                gamma = self.params[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)]</div><div class="line">                beta = self.params[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)]</div><div class="line">                bn_out, bn_cache = batchnorm_forward(affine_out, gamma, beta, self.bn_params[i])</div><div class="line">                bn_caches.append(bn_cache)</div><div class="line">                relu_out, relu_cache = relu_forward(bn_out)</div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                relu_out, relu_cache = relu_forward(affine_out)</div><div class="line">            relu_caches.append(relu_cache) </div><div class="line">            x = relu_out</div><div class="line">        <span class="keyword">else</span>: </div><div class="line">            <span class="comment"># 最后一层，　无batchnorm和relu层</span></div><div class="line">            scores = affine_out</div><div class="line"></div><div class="line">    <span class="comment"># If test mode return early</span></div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'test'</span>:</div><div class="line">      <span class="keyword">return</span> scores</div><div class="line"></div><div class="line">    loss, grads = <span class="number">0.0</span>, &#123;&#125;</div><div class="line">    <span class="comment"># backward pass</span></div><div class="line">    reg = self.reg</div><div class="line">    loss, dloss = softmax_loss(scores, y)</div><div class="line">    <span class="comment"># loss regularization</span></div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        loss += <span class="number">0.5</span> * reg * np.sum(w * w)</div><div class="line">    </div><div class="line">    dout = dloss</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers<span class="number">-1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</div><div class="line">        <span class="keyword">if</span> i == self.num_layers - <span class="number">1</span>:</div><div class="line">            affine_cache = affine_caches[i]</div><div class="line">            dx, dw, db = affine_backward(dout, affine_cache)</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            relu_cache = relu_caches[i]</div><div class="line">            affine_cache = affine_caches[i]</div><div class="line">            <span class="comment"># relu backward</span></div><div class="line">            dx = relu_backward(dout, relu_cache)</div><div class="line">            <span class="comment"># batchnorm backward</span></div><div class="line">            <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">                bn_cache = bn_caches[i]</div><div class="line">                dx, dgamma, dbeta = batchnorm_backward(dx, bn_cache)</div><div class="line">                grads[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)] = dgamma</div><div class="line">                grads[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)] = dbeta</div><div class="line">            <span class="comment"># dropout backward</span></div><div class="line">            <span class="keyword">if</span> self.use_dropout:</div><div class="line">                dropout_cache = dropout_caches[i]</div><div class="line">                dx = dropout_backward(dx, dropout_cache)</div><div class="line">            <span class="comment"># affine backward</span></div><div class="line">            dx, dw, db = affine_backward(dx, affine_cache)</div><div class="line">       </div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        <span class="comment"># gradient regularization</span></div><div class="line">        dw += reg * w</div><div class="line">        </div><div class="line">        grads[<span class="string">'W'</span> + str(i+<span class="number">1</span>)] = dw</div><div class="line">        grads[<span class="string">'b'</span> + str(i+<span class="number">1</span>)] = db</div><div class="line">        </div><div class="line">        dout = dx  <span class="comment"># feed into next iteration</span></div><div class="line"></div><div class="line">    <span class="keyword">return</span> loss, grads</div></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/02/07/CNN_overview/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          卷积神经网络（CNN）概述
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/12/05/hexo-mathjax/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">【转】Hexo下mathjax的转义问题</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-神经网络的模块化实现"><span class="toc-number">1.</span> <span class="toc-text">1. 神经网络的模块化实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Batch-Normalization实现"><span class="toc-number">2.</span> <span class="toc-text">2. Batch Normalization实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-Dropout实现"><span class="toc-number">3.</span> <span class="toc-text">3. Dropout实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-多层全连接神经网络（Fully-Connected-Network）的实现"><span class="toc-number">4.</span> <span class="toc-text">2. 多层全连接神经网络（Fully Connected Network）的实现</span></a></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>

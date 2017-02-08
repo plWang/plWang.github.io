@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>flask开发实践（三） | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="web开发Flaskherokuflask应用部署" />
+  
+  
+  
+  
+  <meta name="description" content="​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文Flask开发实践（一）和Flask开发实践（二），完整的教程可以参照Flask-by-Example">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flask开发实践（三）">
+<meta property="og:url" content="https://plWang.github.io/2016/10/31/flaskDevInPractice-3/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文Flask开发实践（一）和Flask开发实践（二），完整的教程可以参照Flask-by-Example">
+<meta property="og:updated_time" content="2016-11-03T08:28:24.063Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Flask开发实践（三）">
+<meta name="twitter:description" content="​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文Flask开发实践（一）和Flask开发实践（二），完整的教程可以参照Flask-by-Example">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-flaskDevInPractice-3" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      Flask开发实践（三）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2016/10/31/flaskDevInPractice-3/" class="article-date">
+	  <time datetime="2016-10-31T06:33:25.000Z" itemprop="datePublished">2016-10-31</time>
+	</a>
+
+      
+    <a class="article-category-link" href="/categories/python/">python</a><a class="article-category-link" href="/categories/python/web开发/">web开发</a>
+
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文<a href="https://plwang.github.io/2016/10/29/flaskDevInPractice-1/">Flask开发实践（一）</a>和<a href="https://plwang.github.io/2016/10/31/flaskDevInPractice-2/">Flask开发实践（二）</a>，完整的教程可以参照<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/" target="_blank" rel="external">Flask-by-Example</a>。我的完整源码已经分享到我的<a href="https://github.com/plWang/wordcount" target="_blank" rel="external">Github</a>上，大家可以参考。</p>
+<a id="more"></a>
+<h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><p>在将自己的Web应用部署到Heroku上之前，确保自己已经有了一个Heroku账号，并且下载和安装了Heroku <a href="https://devcenter.heroku.com/articles/heroku-command-line" target="_blank" rel="external">Toolbelt</a>。Heroku官网上有一个简单的入门教程（<a href="https://devcenter.heroku.com/articles/getting-started-with-python#introduction" target="_blank" rel="external">Getting started with python</a>），大家可以参考。</p>
+<h3 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h3><h4 id="1-安装gunicorn"><a href="#1-安装gunicorn" class="headerlink" title="1. 安装gunicorn"></a>1. 安装gunicorn</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pip install gunicorn</div></pre></td></tr></table></figure>
+<h4 id="2-创建Procfile和runtime文件"><a href="#2-创建Procfile和runtime文件" class="headerlink" title="2. 创建Procfile和runtime文件"></a>2. 创建Procfile和runtime文件</h4><p>在你的应用根目录下创建一个Procfile文件并加入以下内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: gunicorn &lt;app&gt;:app</div></pre></td></tr></table></figure>
+<p>其中，\<app>部分你需要填写你的应用中运行应用实例的python文件的名称，即app.run()所在的文件的名称。如果你的应用是单一模块的应用，它很可能在app.py中。如果你的应用是基于包的，那么它可能是run.py或者其他你命名的包含应用运行实例的文件。在我的应用中，它看起来是这个样子的：</app></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: gunicorn run:app</div></pre></td></tr></table></figure>
+<p>另外，你还需要创建一个runtime.txt文件，在这个文件中你可以指定应用运行的python环境的版本，比如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python 2.7.12</div></pre></td></tr></table></figure>
+<h4 id="3-在Heroku中创建应用"><a href="#3-在Heroku中创建应用" class="headerlink" title="3. 在Heroku中创建应用"></a>3. 在Heroku中创建应用</h4><p>在命令行中运行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku create &lt;yourappname&gt;</div></pre></td></tr></table></figure>
+<p>\<yourappname>是你自己命名的heroku应用的名字。</yourappname></p>
+<p>接下来，将你的应用添加到远程git中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git remote add pro git@heroku.com:YOUR_APP_NAME.git</div></pre></td></tr></table></figure>
+<p>然后推送到远程仓库中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git push prom master</div></pre></td></tr></table></figure>
+<p>推送之后，heroku会检测到python应用，并且根据requirements.txt的内容安装相应的依赖。</p>
+<h4 id="4-Heroku设置"><a href="#4-Heroku设置" class="headerlink" title="4. Heroku设置"></a>4. Heroku设置</h4><p>我们在本地环境中设置的环境变量无法同步到Heroku中，但我们可以通过heroku config命令设置heroku中的环境变量的值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku config: set APP_SETTINGS=config.ProductionConfig</div></pre></td></tr></table></figure>
+<h4 id="5-设置数据库连接"><a href="#5-设置数据库连接" class="headerlink" title="5. 设置数据库连接"></a>5. 设置数据库连接</h4><p>创建heroku应用时一般会自动创建一个postgresql数据库，我们可以通过heroku config命令查看数据库的环境变量设置。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ heroku config</div><div class="line">=== wordcountpl-pro Config Vars</div><div class="line">APP_SETTINGS:         config.ProductionConfig</div><div class="line">DATABASE_URL:         postgres://zjaqehsogkwdpf:tYfE-hzC2WdIpNQhq1X-bqpmrE@ec2-107-20-136-222.compute-1.amazonaws.com:5432/d2sd6e2a42g9pp</div><div class="line">REDISTOGO_URL:        redis://redistogo:ace458199c86d6b3ecc83b24f177bdfc@viperfish.redistogo.com:11743/</div></pre></td></tr></table></figure>
+<p>如果你的环境变量中没有DATABASE_URL这一项，那么可以自己添加postgresql插件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroki addons:create heroku-postgresql:hobby-dev</div></pre></td></tr></table></figure>
+<p>或者在网页Dashboard中进行添加。</p>
+<p>然后我们需要进行数据库迁移。如果你之前已经在本地运行过数据库迁移命令，那么现在只需要在heroku中运行db upgrade命令就可以将数据库迁移到heroku上。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ heroku run python manage.py db upgrade --app wordcount-stage</div><div class="line">  Running python manage.py db upgrade on wordcount-stage... up, run.5677</div><div class="line">  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.</div><div class="line">  INFO  [alembic.runtime.migration] Will assume transactional DDL.</div><div class="line">  INFO  [alembic.runtime.migration] Running upgrade  -&gt; 63dba2060f71, empty message</div></pre></td></tr></table></figure>
+<p>如果你之前没有运行db migrate命令或者数据模型已经发生改变，你需要在本地先运行<code>python manage.py db migrate</code>命令，将变更push到远程仓库后，然后再进行上面的操作。</p>
+<blockquote>
+<p>注意：在heroku中不需要运行<code>python manage.py db init</code>和<code>python manage.py db migrate</code>命令，只需要进行数据库的升级即可。</p>
+</blockquote>
+<h4 id="6-设置Redis连接"><a href="#6-设置Redis连接" class="headerlink" title="6. 设置Redis连接"></a>6. 设置Redis连接</h4><p>在heroku中添加redis组件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku addons:create redistogo:nano</div></pre></td></tr></table></figure>
+<p>查看heroku config中是否有REDISTOGO_URL的环境变量。</p>
+<p>确保我们的程序中有下面的内容：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">redis_url = os.getenv(<span class="string">'REDISTOGO_URL'</span>, <span class="string">'redis://localhost:6379'</span>)</div></pre></td></tr></table></figure>
+<h4 id="7-修改Procfile文件"><a href="#7-修改Procfile文件" class="headerlink" title="7. 修改Procfile文件"></a>7. 修改Procfile文件</h4><p>在我们的程序中，需要一个进程运行web应用，另外一个进程运行worker。在heroku中，我们也应该在每个dyno中只运行一个进程。通过<code>heroku run python worker.py</code>命令在另外一个dyno中运行worker进程。</p>
+<p>然而，由于我们的应用比较简单，也可以将web应用和worker运行在同一个dyno中。</p>
+<p>首先，我们需要新建一个脚本，命名为heroku.sh</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">#!/bin/bash</div><div class="line">gunicorn app:app --daemon</div><div class="line">python worker.py</div></pre></td></tr></table></figure>
+<p>然后修改Procfile文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: sh heroku.sh</div></pre></td></tr></table></figure>
+<p>将改动push到远程仓库中，这样我们的web应用就已经成功部署到heroku上并可以正常运行了。</p>
+<p>运行heroku open命令就可以打开相应的网页查看效果。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/flask应用部署/">flask应用部署</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/heroku/">heroku</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/web开发/">web开发</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/12/05/NeuralNetwork1-activationFunction/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Neural Network1-activation function
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/10/31/flaskDevInPractice-2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Flask开发实践（二）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#准备工作"><span class="toc-number">1.</span> <span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Getting-Started"><span class="toc-number">2.</span> <span class="toc-text">Getting Started</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-安装gunicorn"><span class="toc-number">2.1.</span> <span class="toc-text">1. 安装gunicorn</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-创建Procfile和runtime文件"><span class="toc-number">2.2.</span> <span class="toc-text">2. 创建Procfile和runtime文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-在Heroku中创建应用"><span class="toc-number">2.3.</span> <span class="toc-text">3. 在Heroku中创建应用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-Heroku设置"><span class="toc-number">2.4.</span> <span class="toc-text">4. Heroku设置</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-设置数据库连接"><span class="toc-number">2.5.</span> <span class="toc-text">5. 设置数据库连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-设置Redis连接"><span class="toc-number">2.6.</span> <span class="toc-text">6. 设置Redis连接</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-修改Procfile文件"><span class="toc-number">2.7.</span> <span class="toc-text">7. 修改Procfile文件</span></a></li></ol></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>

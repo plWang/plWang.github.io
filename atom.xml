@@ -1,0 +1,1097 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>plWang&#39;s Blog</title>
+  <subtitle>Welcome</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://plWang.github.io/"/>
+  <updated>2017-02-08T09:31:27.757Z</updated>
+  <id>https://plWang.github.io/</id>
+  
+  <author>
+    <name>Wang Penglin</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>卷积神经网络（CNN）概述</title>
+    <link href="https://plWang.github.io/2017/02/07/CNN_overview/"/>
+    <id>https://plWang.github.io/2017/02/07/CNN_overview/</id>
+    <published>2017-02-07T11:38:00.000Z</published>
+    <updated>2017-02-08T09:31:27.757Z</updated>
+    
+    <content type="html"><![CDATA[<p>卷积神经网络一般由三种结构的层构成：</p>
+<ul>
+<li>卷积层（Convolution layer）</li>
+<li>汇聚层（Pooling layer）</li>
+<li>全连接层（Fully Connected Layer）</li>
+</ul>
+<a id="more"></a>
+<h3 id="1-卷积层（Convolution-Layer）"><a href="#1-卷积层（Convolution-Layer）" class="headerlink" title="1. 卷积层（Convolution Layer）"></a>1. 卷积层（Convolution Layer）</h3><p>卷积层是由一些可学习的滤波器集合构成的，每个滤波器在空间上（宽度和高度）都比较小，深度和输入数据一致。前向传播时，每个滤波器都在输入数据的宽度和高度上滑动，与输入数据进行卷积。</p>
+<p>卷积层的超参数主要有4个，它们控制了输出数据的尺寸。</p>
+<ul>
+<li>滤波器的数量：输出数据的深度与滤波器的数量一致</li>
+<li>滤波器的空间尺寸</li>
+<li>步长（stride）：滑动滤波器时，需要指定步长。当步长为1时，滤波器每次移动一个像素。</li>
+<li>零填充（zero-padding）：有时候会将输入数据用0在边缘进行填充，零填充可以控制输出数据的尺寸（最常用的是保持输出数据的尺寸与输入数据一致）</li>
+</ul>
+<p>输出数据在空间上的尺寸（宽和高）可以通过输入数据尺寸（W），滤波器的尺寸（F），步长（S）和零填充的数量（P）来计算。输出数据的空间尺寸为(W-F+2P)/S+1。（注意：这些超参数之间是相互限制的，如果设置不合理，输出数据的尺寸不是整数，因此需要合理的设置超参数）</p>
+<p>举例：</p>
+<p>假设输入数据体的尺寸为[227x227x3]，卷积层的尺寸F=11，步长S=4，零填充P=0，卷积层的深度为K=96。那么输出数据体的空间尺寸为(227-11+2*0)/4+1=55。输出数据的深度与卷机层滤波器的数量一致，为96。所以最终输出数据体的尺寸为[55x55x96]。</p>
+<p><strong>用矩阵乘法实现：</strong></p>
+<p>卷积层的前向传播可以用矩阵乘法的方式实现。</p>
+<ol>
+<li>输入数据的局部区域被im2col操作拉伸为列。比如，如果输入数据是[227x227x3]，要与尺寸为[11x11x3]的滤波器以步长为4进行卷积，就取输入图像中的[11x11x3]数据块，然后将其拉伸为长度为11x11x3=363的列向量。重复这一过程，因为步长为4，所以输出的宽高为(227-11)/4+1=55，所以得到im2col操作的输出矩阵X_col的尺寸为[363x3025]，其中每列是拉伸的感受野，共有55x55=3025个。</li>
+<li>卷积层的权重也被拉伸成行。举例，如果有96个尺寸为[11x11x3]的滤波器，就生成一个矩阵Ｗ_row，尺寸为[96x363]。</li>
+<li>现在卷积的结果就和两个矩阵相乘np.dot(W_row,x_col)是等价的了。在这个例子中，矩阵乘法输出是[96x3025]，给出了每个滤波器在每个位置的点积输出。</li>
+<li>结果最后重新reshape为合理的输出尺寸[55x55x96]。</li>
+</ol>
+<p>这个方法的缺点就是占用内存太多，因为在输入数据体中的某些值在X_col中被复制了多次。但是其优点是矩阵乘法有非常多的高效实现方式。</p>
+<p><strong>反向传播：</strong></p>
+<p>卷积操作的反向传播还是一个卷积，但是是和空间上翻转的滤波器进行卷积。</p>
+<h3 id="2-汇聚（池化）层（Pooling-Layer）"><a href="#2-汇聚（池化）层（Pooling-Layer）" class="headerlink" title="2. 汇聚（池化）层（Pooling Layer）"></a>2. 汇聚（池化）层（Pooling Layer）</h3><p>通常，在连续的卷积层之间会周期性地插入一个汇聚层。它的作用是逐渐降低数据体的空间尺寸，这样的话能减少网络中参数的数量，使得计算资源消耗变少，也能有效的控制过拟合。</p>
+<p>通常，汇聚层使用max操作，比如使用尺寸2x2的滤波器，以步长为2对输入数据进行降采样，那么就是从2x2个数字中取最大值。</p>
+<p>除了最大汇聚（max pooling）之外，汇聚单元还可以使用其他函数，比如平均汇聚（average pooling）或L-2范式汇聚（L2-norm pooling）。</p>
+<p><strong>反向传播：</strong></p>
+<p>pooling操作的反向传播就是将梯度只沿最大的数回传，其余位置的梯度都为0。因此，在前向传播时，通常会把最大元素的索引记录下来，这样反向传播时就很高效。</p>
+<h3 id="3-全连接层"><a href="#3-全连接层" class="headerlink" title="3. 全连接层"></a>3. 全连接层</h3><p>卷积神经网络中的全连接层与常规神经网络中一样，会计算出分类的得分。</p>
+<p><strong>全连接层转化为卷积层：</strong></p>
+<p>实际应用中，这种变换更加有用。假设一个卷积神经网络的输入是224x224x3的图像，一系列的卷积层和汇聚层操作后图数据尺寸变为7x7x512。AlexNet中使用了两个尺寸为4096的全连接层（两层尺寸分别为25088x4096, 4096x4096），最后有一个1000个神经元的全连接层用于计算分类评分（尺寸4096x1000）。我们可以将这3个全连接层中的任意一个转化为卷积层。</p>
+<ul>
+<li>针对第一个连接区域是[7x7x512]的全连接层，令其滤波器尺寸为F=7（与输入数据尺寸一致），数量为4096个，这样输出数据体的尺寸就为[1x1x4096]了。</li>
+<li>针对第二个全连接层，令其滤波器尺寸为F=1，这样输出数据体为[1x1x4096]。</li>
+<li>对最后一个全连接层，令其滤波器尺寸为F=1，这样输出为[1x1x1000]。</li>
+</ul>
+<p>这样的转化有什么作用呢？在下面的情况下可以更高效：让卷积网络在一张更大的输入图片上滑动得到多个输出，这样的转化可以让我们在单个前向传播的过程中完成上述操作。</p>
+<p>由于全连接层的限制，卷积神经网络的输入尺寸必须是固定的。例如，对于一个输入尺寸为224x224的神经网络来说，当我们想要让卷积神经网络在一张更大的输入图像（384x384）上滑动（步长32）得到多个输出时，需要将每个区域（224x224）分别输入卷积网络，最后得到6x6个位置的类别得分，这样总共需要经过6x6=36次前向传播过程才能完成。如果将全连接层转化为卷积层，那么上述过程就可以在单个前向传播的过程中完成。</p>
+<h3 id="4-层的排列和尺寸设置"><a href="#4-层的排列和尺寸设置" class="headerlink" title="4. 层的排列和尺寸设置"></a>4. 层的排列和尺寸设置</h3><h4 id="排列规律"><a href="#排列规律" class="headerlink" title="排列规律"></a>排列规律</h4><p>最常见的卷积神经网络结构可以用如下方式表示：</p>
+<p>INPUT -&gt; [ [CONV -&gt; ReLU]<em>N -&gt; POOL? ] </em>M -&gt; [FC -&gt; ReLU] *K -&gt; FC</p>
+<p>其中，*指的是重复次数，POOL?指的是一个可选的汇聚层。并且，一般N&gt;=3, M&gt;=0, K&gt;=0, 通常K&lt;3。</p>
+<h4 id="尺寸规律"><a href="#尺寸规律" class="headerlink" title="尺寸规律"></a>尺寸规律</h4><ol>
+<li><strong>输入层</strong>应该能被2整除很多次。常用数字包括32, 64, 96或224, 384和512。</li>
+<li><strong>卷积层</strong>应该使用小尺寸滤波器（比如3x3或5x5），使用步长S=1。还有就是对输入数据进行零填充。</li>
+<li><strong>汇聚层</strong>最常用的设置是2x2感受野的最大值汇聚，步长为2。最大值汇聚的感受野尺寸很少有超过3的，因为汇聚国语激烈，易造成数据信息丢失。</li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;卷积神经网络一般由三种结构的层构成：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;卷积层（Convolution layer）&lt;/li&gt;
+&lt;li&gt;汇聚层（Pooling layer）&lt;/li&gt;
+&lt;li&gt;全连接层（Fully Connected Layer）&lt;/li&gt;
+&lt;/ul&gt;
+    
+    </summary>
+    
+      <category term="机器学习" scheme="https://plWang.github.io/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+      <category term="机器学习" scheme="https://plWang.github.io/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="神经网络" scheme="https://plWang.github.io/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+      <category term="深度学习" scheme="https://plWang.github.io/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>CS231n课程作业2-Part1：基本神经网络的模块化实现</title>
+    <link href="https://plWang.github.io/2016/12/06/cs231n-Assignment2-Part1/"/>
+    <id>https://plWang.github.io/2016/12/06/cs231n-Assignment2-Part1/</id>
+    <published>2016-12-06T03:28:00.000Z</published>
+    <updated>2017-02-08T09:30:55.865Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的<a href="https://github.com/plWang/" target="_blank" rel="external">Github</a>.</p>
+<a id="more"></a>
+<h4 id="1-神经网络的模块化实现"><a href="#1-神经网络的模块化实现" class="headerlink" title="1. 神经网络的模块化实现"></a>1. 神经网络的模块化实现</h4><p><strong>1. 全连接层（Affine Layer）</strong></p>
+<p>前向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">affine_forward</span><span class="params">(x, w, b)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the forward pass for an affine (fully-connected) layer.</div><div class="line"></div><div class="line">    The input x has shape (N, d_1, ..., d_k) and contains a minibatch of N</div><div class="line">    examples, where each example x[i] has shape (d_1, ..., d_k). We will</div><div class="line">    reshape each input into a vector of dimension D = d_1 * ... * d_k, and</div><div class="line">    then transform it to an output vector of dimension M.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: A numpy array containing input data, of shape (N, d_1, ..., d_k)</div><div class="line">    - w: A numpy array of weights, of shape (D, M)</div><div class="line">    - b: A numpy array of biases, of shape (M,)</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: output, of shape (N, M)</div><div class="line">    - cache: (x, w, b)</div><div class="line">    """</div><div class="line">    out = x.dot(w) + b</div><div class="line">    cache = (x, w)</div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">affine_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">'''</span></div><div class="line">	omputes the backward pass for an affine layer.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - dout: Upstream derivative, of shape (N, M)</div><div class="line">    - cache: Tuple of:</div><div class="line">      - x: Input data, of shape (N, d_1, ... d_k)</div><div class="line">      - w: Weights, of shape (D, M)</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - dx: Gradient with respect to x, of shape (N, d1, ..., d_k)</div><div class="line">    - dw: Gradient with respect to w, of shape (D, M)</div><div class="line">    - db: Gradient with respect to b, of shape (M,)</div><div class="line">	'''</div><div class="line">    dx = dout.dor(w.T)</div><div class="line">    dw = x.T.dot(dout)</div><div class="line">    db = np.sum(dout, axis=<span class="number">0</span>)</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> dx, dw, db</div></pre></td></tr></table></figure>
+<p><strong>2. ReLU层</strong></p>
+<p>前向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">relu_froward</span><span class="params">(x)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the forward pass for a layer of rectified linear units (ReLUs).</div><div class="line"></div><div class="line">    Input:</div><div class="line">    - x: Inputs, of any shape</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: Output, of the same shape as x</div><div class="line">    - cache: x</div><div class="line">    """</div><div class="line">    out = np.maximum(x, <span class="number">0</span>)</div><div class="line">    cache = x</div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">relu_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Computes the backward pass for a layer of rectified linear units (ReLUs).</div><div class="line"></div><div class="line">    Input:</div><div class="line">    - dout: Upstream derivatives, of any shape</div><div class="line">    - cache: Input x, of same shape as dout</div><div class="line"></div><div class="line">    Returns:</div><div class="line">    - dx: Gradient with respect to x</div><div class="line">    """</div><div class="line">    x = cache</div><div class="line">    dx = dout * (x &gt;= <span class="number">0</span>)</div><div class="line">    <span class="keyword">return</span> dx</div></pre></td></tr></table></figure>
+<p><strong>损失函数</strong></p>
+<p><strong>3. softmax层</strong></p>
+<p>损失函数<br>$$<br>\textstyle L_i = -log(\frac{e^{f_{y_i}}}{\sum_je^{f_j}}) = -f_{y_i} + log(\sum_je^{f_i})<br>$$<br>设$p_i = \frac{e^{f_{y_i}}}{\sum_je^{fj}}$, 则损失函数的梯度为<br>$$<br>\frac{\partial L_i}{\partial y_i} = -\frac{1}{p_i} \frac{\partial p_i}{\partial y_i} = -[i=j] + p_j<br>$$<br>参考<a href="cs231nNotes.md">cs231n笔记-损失函数</a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">softmax_loss</span><span class="params">(x, y)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Computes the loss and gradient for softmax classification.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of shape (N, C) where x[i, j] is the score for the jth class</div><div class="line">      for the ith input.</div><div class="line">    - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and</div><div class="line">      0 &lt;= y[i] &lt; C</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - loss: Scalar giving the loss</div><div class="line">    - dx: Gradient of the loss with respect to x</div><div class="line">    """</div><div class="line">    probs = np.exp(x - np.max(x, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>))</div><div class="line">    probs /= np.sum(probs, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>)</div><div class="line">    N = x.shape[<span class="number">0</span>]</div><div class="line">    loss = -np.sum(np.log(probs[np.arange(N), y])) / N</div><div class="line">    <span class="comment"># gradient</span></div><div class="line">    dx = probs.copy()</div><div class="line">    dx[np.arange(N), y] -= <span class="number">1</span></div><div class="line">    dx /= N</div><div class="line">    <span class="keyword">return</span> loss, dx</div></pre></td></tr></table></figure>
+<p><strong>4. svm_loss层</strong></p>
+<p>损失函数<br>$$<br>L_i=\sum_{j \neq y_i}{max(0,s_j-s_{y_i}+1)}<br>$$<br>其梯度</p>
+<p>对正确分类的行的梯度<br>$$<br>\bigtriangledown_{w_{y_i}}L_i = -(\sum_{j \neq y_i}\mathbb{1}(\omega_j^Tx_i - \omega_{y_i}^Tx_i + \Delta &gt; 0))x_i<br>$$<br>对不正确分类的行的梯度<br>$$<br>\bigtriangledown_{w_j}L_i = \mathbb{1}(\omega_j^Tx_i - \omega_{y_i}^Tx_i + \Delta &gt; 0)x_i<br>$$<br>即<br>$$<br>Q_{i,k} =<br>\begin{cases}<br>\bigtriangledown_{\omega_{y_i}}L_i \quad if \ j=y_i \\<br>\bigtriangledown_{\omega_{j}}L_i \quad otherwise<br>\end{cases}<br>$$</p>
+<p>$$<br>\bigtriangledown_\omega L = \frac{1}{m}(Q^TX)^T = \frac{1}{N}X^TQ<br>$$</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">svm_loss</span><span class="params">(x, y)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Computes the loss and gradient using for multiclass SVM classification.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of shape (N, C) where x[i, j] is the score for the jth class</div><div class="line">      for the ith input.</div><div class="line">    - y: Vector of labels, of shape (N,) where y[i] is the label for x[i] and</div><div class="line">      0 &lt;= y[i] &lt; C</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - loss: Scalar giving the loss</div><div class="line">    - dx: Gradient of the loss with respect to x</div><div class="line">    """</div><div class="line">    N = x.shape[<span class="number">0</span>]</div><div class="line">    correct_class_score = x[np.arange(N), y]</div><div class="line">    margins = np.maximum(<span class="number">0</span>, x-correct_class_score[:, nexaxis] + <span class="number">1.0</span>)</div><div class="line">    margins[np.arange(N), y] = <span class="number">0</span></div><div class="line">    loss = np.sum(margins) / N</div><div class="line">    </div><div class="line">    <span class="comment">#gradient</span></div><div class="line">    num_pos = np.sum(margins&gt;<span class="number">0</span>, axis=<span class="number">1</span>)</div><div class="line">    dx = np.zeros_like(x)</div><div class="line">    dx[margins &gt; <span class="number">0</span>] = <span class="number">1</span></div><div class="line">    dx[np.arange(N), y] -= num_pos</div><div class="line">    dx /= N</div><div class="line">    <span class="keyword">return</span> loss, dx</div></pre></td></tr></table></figure>
+<h4 id="2-Batch-Normalization实现"><a href="#2-Batch-Normalization实现" class="headerlink" title="2. Batch Normalization实现"></a>2. Batch Normalization实现</h4><p><strong>前向传播</strong></p>
+<p>要注意的是，在训练和测试阶段，BatchNorm的实现方式是不同的。训练阶段时，batchnorm层使用输入的mini-batch数据的均值和方差进行归一化；而测试阶段时，使用的则是running_mean和running_var来进行归一化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">batchnorm_forward</span><span class="params">(x, gamma, beta, bn_param)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    Input:</div><div class="line">    - x: Data of shape (N, D)</div><div class="line">    - gamma: Scale parameter of shape (D,)</div><div class="line">    - beta: Shift paremeter of shape (D,)</div><div class="line">    - bn_param: Dictionary with the following keys:</div><div class="line">      - mode: 'train' or 'test'; required</div><div class="line">      - eps: Constant for numeric stability</div><div class="line">      - momentum: Constant for running mean / variance.</div><div class="line">      - running_mean: Array of shape (D,) giving running mean of features</div><div class="line">      - running_var Array of shape (D,) giving running variance of features</div><div class="line"></div><div class="line">    Returns a tuple of:</div><div class="line">    - out: of shape (N, D)</div><div class="line">    - cache: A tuple of values needed in the backward pass</div><div class="line">    """</div><div class="line">    mode = bn_params[<span class="string">'mode'</span>]</div><div class="line">    eps = bn_params.get(<span class="string">'eps'</span>, <span class="number">1e-5</span>)</div><div class="line">    momentum = bn_params.get(<span class="string">'momentum'</span>, <span class="number">0.9</span>)</div><div class="line">    </div><div class="line">    N, D = x.shape</div><div class="line">    running_mean = bn_params.get(<span class="string">'running_mean'</span>, np.zeros(D, dtype=x.dtype))</div><div class="line">    running_var = bn_prams.get(<span class="string">'running_var'</span>, np.zeros(D, dtype=x.dtype))</div><div class="line">    </div><div class="line">    sample_mean = np.mean(x, axis=<span class="number">0</span>)</div><div class="line">    sample_var = np.var(x, axis=<span class="number">0</span>)</div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        x_normalized = (x - sample_mean) / np.sqrt(sample_var + eps)</div><div class="line">        out = gamma * x + beta</div><div class="line">        </div><div class="line">        running_mean = momentum * running_mean + (<span class="number">1</span> - momemtum) * sample_mean</div><div class="line">        running_var = momentum * running_var + (<span class="number">1</span> - momentum) * sample_var</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        x_normalized = (x - running_mean) / np.sqrt(running_var + eps)</div><div class="line">        out = gamma * x_normalized + beta</div><div class="line">    <span class="keyword">else</span>:</div><div class="line">        <span class="keyword">raise</span> ValueError(<span class="string">'Invalid forward batchnorm mode "%s"'</span>% mode)</div><div class="line">    </div><div class="line">    cache = (x_normalized, gamma, beta, sample_mean, sample_var, x, eps)</div><div class="line">    <span class="comment"># Store the updated running means back into bn_param</span></div><div class="line">    bn_param[<span class="string">'running_mean'</span>] = running_mean</div><div class="line">    bn_param[<span class="string">'running_var'</span>] = running_var</div><div class="line"></div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p><strong>后向传播</strong></p>
+<p>batchnorm层的的计算线路图如下：</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/BNcircuit.png" alt="BNcircuit"></p>
+<p>按照链式法则，可以计算出各个步骤的梯度。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">batchnorm_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">  <span class="string">"""</span></div><div class="line">  Backward pass for batch normalization.</div><div class="line">  </div><div class="line">  For this implementation, you should write out a computation graph for</div><div class="line">  batch normalization on paper and propagate gradients backward through</div><div class="line">  intermediate nodes.</div><div class="line">  </div><div class="line">  Inputs:</div><div class="line">  - dout: Upstream derivatives, of shape (N, D)</div><div class="line">  - cache: Variable of intermediates from batchnorm_forward.</div><div class="line">  </div><div class="line">  Returns a tuple of:</div><div class="line">  - dx: Gradient with respect to inputs x, of shape (N, D)</div><div class="line">  - dgamma: Gradient with respect to scale parameter gamma, of shape (D,)</div><div class="line">  - dbeta: Gradient with respect to shift parameter beta, of shape (D,)</div><div class="line">  """</div><div class="line">  N, D = dout.shape</div><div class="line">  x_normalized, gamma, beta, sample_mean, sample_var, x, eps = cache</div><div class="line">    </div><div class="line">  <span class="comment"># out = gamma * x_normalized + beta (N, D)</span></div><div class="line">  dx_normalized = gamma * dout  <span class="comment"># (N, D)</span></div><div class="line">  dgamma = np.sum(dout * x_normalized, axis=<span class="number">0</span>)  <span class="comment"># (D,)</span></div><div class="line">  dbeta = np.sum(dout, axis=<span class="number">0</span>)  <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  <span class="comment"># x_normalized = x_mu * ivar</span></div><div class="line">  ivar = <span class="number">1.0</span> / np.sqrt(sample_var + eps) </div><div class="line">  x_mu = x - sample_mean  <span class="comment"># (N, D)</span></div><div class="line">  dx_mu1 = ivar * dx_normalized  <span class="comment">#(N, D)</span></div><div class="line">  divar = np.sum(x_mu * dx_normalized, axis=<span class="number">0</span>)  <span class="comment">#(D, )</span></div><div class="line">    </div><div class="line">  <span class="comment"># ivar = 1 / std</span></div><div class="line">  std = np.sqrt(sample_var + eps)   <span class="comment"># (D, )</span></div><div class="line">  dstd = - <span class="number">1.0</span> / np.square(std) * divar  <span class="comment"># (D, )</span></div><div class="line">    </div><div class="line">  <span class="comment"># std = sqrt(sample_var + eps)</span></div><div class="line">  dsample_var = <span class="number">0.5</span> / np.sqrt(sample_var + eps) * dstd  <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  <span class="comment"># sample_var = 1/N * sum(sq)</span></div><div class="line">  dsq = <span class="number">1.0</span>/N * np.ones([N, D]) * dsample_var  <span class="comment"># (D, )</span></div><div class="line"></div><div class="line">  <span class="comment"># sq = x_mu^2</span></div><div class="line">  dx_mu2 = <span class="number">2</span> * x_mu * dsq   <span class="comment"># (D, )</span></div><div class="line">  </div><div class="line">  dx_mu = dx_mu1 + dx_mu2   <span class="comment"># (N, D)</span></div><div class="line">  </div><div class="line">  <span class="comment"># x_mu = x - sample_mean</span></div><div class="line">  dsample_mean = - np.sum(dx_mu, axis=<span class="number">0</span>)   <span class="comment"># (D, ) </span></div><div class="line">  dx1 = <span class="number">1</span> * dx_mu  <span class="comment"># (N, D)</span></div><div class="line"></div><div class="line">  <span class="comment"># sample_mean = 1/N * sum(x_i)</span></div><div class="line">  dx2 = <span class="number">1.0</span> /N * np.ones([N,D]) * dsample_mean  <span class="comment"># (N, D)  </span></div><div class="line"></div><div class="line">  dx = dx1 + dx2  <span class="comment"># (N, D)</span></div><div class="line"></div><div class="line">  <span class="keyword">return</span> dx, dgamma, dbeta</div></pre></td></tr></table></figure>
+<p>参考<a href="https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html" target="_blank" rel="external">Understanding the backward pass through Batch Normalization Layer</a>，上面有非常详细的推导。</p>
+<h4 id="3-Dropout实现"><a href="#3-Dropout实现" class="headerlink" title="3. Dropout实现"></a>3. Dropout实现</h4><p><strong>前向传播</strong></p>
+<p>需要注意的是，我们只在训练时才进行dropout，而在测试阶段不需要执行。同时在训练时我们需要对输出按照p进行范围调整，从而让前向传播在测试时保持不变。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">dropout_forward</span><span class="params">(x, dropout_param)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Performs the forward pass for (inverted) dropout.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - x: Input data, of any shape</div><div class="line">    - dropout_param: A dictionary with the following keys:</div><div class="line">      - p: Dropout parameter. We drop each neuron output with probability p.</div><div class="line">      - mode: 'test' or 'train'. If the mode is train, then perform dropout;</div><div class="line">        if the mode is test, then just return the input.</div><div class="line">      - seed: Seed for the random number generator. Passing seed makes this</div><div class="line">        function deterministic, which is needed for gradient checking but not in</div><div class="line">        real networks.</div><div class="line"></div><div class="line">    Outputs:</div><div class="line">    - out: Array of the same shape as x.</div><div class="line">    - cache: A tuple (dropout_param, mask). In training mode, mask is the dropout</div><div class="line">      mask that was used to multiply the input; in test mode, mask is None.</div><div class="line">    """</div><div class="line">    p, mode = dropout_param[<span class="string">'p'</span>], dropout_param[<span class="string">'mode'</span>]</div><div class="line">    <span class="keyword">if</span> <span class="string">'seed'</span> <span class="keyword">in</span> dropout_param:</div><div class="line">        np.random.seed(dropout_param[<span class="string">'seed'</span>])</div><div class="line">        </div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        mask = (np.random.rand(*x.shape) &gt; p) / p</div><div class="line">        out = mask * x</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        out = x</div><div class="line">        </div><div class="line">    cache = (dropout_param, mask)</div><div class="line">    out = out.astype(x.dtype, copy=<span class="keyword">False</span>)</div><div class="line">    </div><div class="line">    <span class="keyword">return</span> out, cache</div></pre></td></tr></table></figure>
+<p>后向传播</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">dropout_backward</span><span class="params">(dout, cache)</span>:</span></div><div class="line">	<span class="string">"""</span></div><div class="line">    Perform the backward pass for (inverted) dropout.</div><div class="line"></div><div class="line">    Inputs:</div><div class="line">    - dout: Upstream derivatives, of any shape</div><div class="line">    - cache: (dropout_param, mask) from dropout_forward.</div><div class="line">    """</div><div class="line">    dropout_param, mask = cache</div><div class="line">    mode = dropout_param[<span class="string">'mode'</span>]</div><div class="line">    </div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'train'</span>:</div><div class="line">        dx = dout * mask</div><div class="line">    <span class="keyword">elif</span> mode == <span class="string">'test'</span>:</div><div class="line">        dx = dout</div><div class="line">        </div><div class="line">    <span class="keyword">return</span> dx</div></pre></td></tr></table></figure>
+<h4 id="2-多层全连接神经网络（Fully-Connected-Network）的实现"><a href="#2-多层全连接神经网络（Fully-Connected-Network）的实现" class="headerlink" title="2. 多层全连接神经网络（Fully Connected Network）的实现"></a>2. 多层全连接神经网络（Fully Connected Network）的实现</h4><p>实现一个任意层数的全连接神经网络，网络结构如下：</p>
+<p>{ affine - [batch norm] - relu - [dropout] } × (L - 1) - affine - softmax</p>
+<p>其中[]代表可选的，{}内的重复L-1层。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">FullyConnectedNet</span><span class="params">(object)</span>:</span></div><div class="line"></div><div class="line">  <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, hidden_dims, input_dim=<span class="number">3</span>*<span class="number">32</span>*<span class="number">32</span>, num_classes=<span class="number">10</span>,</span></span></div><div class="line">               dropout=<span class="number">0</span>, use_batchnorm=False, reg=<span class="number">0.0</span>,</div><div class="line">               weight_scale=<span class="number">1e-2</span>, dtype=np.float32, seed=None):</div><div class="line"></div><div class="line">    self.use_batchnorm = use_batchnorm</div><div class="line">    self.use_dropout = dropout &gt; <span class="number">0</span></div><div class="line">    self.reg = reg</div><div class="line">    self.num_layers = <span class="number">1</span> + len(hidden_dims)</div><div class="line">    self.dtype = dtype</div><div class="line">    self.params = &#123;&#125;</div><div class="line"></div><div class="line">    layer_dims = [input_dim] + hidden_dims + [num_classes]</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)] = np.random.normal(loc=<span class="number">0.0</span>, scale=weight_scale, size=[layer_dims[i], layer_dims[i+<span class="number">1</span>]])</div><div class="line">        self.params[<span class="string">'b'</span> + str(i+<span class="number">1</span>)] = np.zeros(layer_dims[i+<span class="number">1</span>])</div><div class="line">        <span class="keyword">if</span> self.use_batchnorm <span class="keyword">and</span> i &lt; self.num_layers<span class="number">-1</span>:</div><div class="line">            self.params[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)] = np.ones(layer_dims[i+<span class="number">1</span>])</div><div class="line">            self.params[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)] = np.zeros(layer_dims[i+<span class="number">1</span>])</div><div class="line"></div><div class="line">    <span class="comment"># When using dropout we need to pass a dropout_param dictionary to each</span></div><div class="line">    <span class="comment"># dropout layer so that the layer knows the dropout probability and the mode</span></div><div class="line">    <span class="comment"># (train / test). You can pass the same dropout_param to each dropout layer.</span></div><div class="line">    self.dropout_param = &#123;&#125;</div><div class="line">    <span class="keyword">if</span> self.use_dropout:</div><div class="line">      self.dropout_param = &#123;<span class="string">'mode'</span>: <span class="string">'train'</span>, <span class="string">'p'</span>: dropout&#125;</div><div class="line">      <span class="keyword">if</span> seed <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">        self.dropout_param[<span class="string">'seed'</span>] = seed</div><div class="line">    </div><div class="line">    <span class="comment"># With batch normalization we need to keep track of running means and</span></div><div class="line">    <span class="comment"># variances, so we need to pass a special bn_param object to each batch</span></div><div class="line">    <span class="comment"># normalization layer. You should pass self.bn_params[0] to the forward pass</span></div><div class="line">    <span class="comment"># of the first batch normalization layer, self.bn_params[1] to the forward</span></div><div class="line">    <span class="comment"># pass of the second batch normalization layer, etc.</span></div><div class="line">    self.bn_params = []</div><div class="line">    <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">      self.bn_params = [&#123;<span class="string">'mode'</span>: <span class="string">'train'</span>&#125; <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers - <span class="number">1</span>)]</div><div class="line">    </div><div class="line">    <span class="comment"># Cast all parameters to the correct datatype</span></div><div class="line">    <span class="keyword">for</span> k, v <span class="keyword">in</span> self.params.iteritems():</div><div class="line">      self.params[k] = v.astype(dtype)</div><div class="line"></div><div class="line"></div><div class="line">  <span class="function"><span class="keyword">def</span> <span class="title">loss</span><span class="params">(self, X, y=None)</span>:</span></div><div class="line">    X = X.astype(self.dtype)</div><div class="line">    mode = <span class="string">'test'</span> <span class="keyword">if</span> y <span class="keyword">is</span> <span class="keyword">None</span> <span class="keyword">else</span> <span class="string">'train'</span></div><div class="line"></div><div class="line">    <span class="comment"># Set train/test mode for batchnorm params and dropout param since they</span></div><div class="line">    <span class="comment"># behave differently during training and testing.</span></div><div class="line">    <span class="keyword">if</span> self.dropout_param <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">      self.dropout_param[<span class="string">'mode'</span>] = mode   </div><div class="line">    <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">      <span class="keyword">for</span> bn_param <span class="keyword">in</span> self.bn_params:</div><div class="line">        bn_param[mode] = mode</div><div class="line"></div><div class="line">    <span class="comment"># forward pass</span></div><div class="line">    affine_caches, bn_caches, relu_caches, dropout_caches = [], [], [], []</div><div class="line">    x = X</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        b = self.params[<span class="string">'b'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        affine_out, affine_cache = affine_forward(x, w, b)</div><div class="line">        affine_caches.append(affine_cache)</div><div class="line">        <span class="keyword">if</span> i &lt; self.num_layers<span class="number">-1</span>:</div><div class="line">            <span class="keyword">if</span> self.use_dropout:</div><div class="line">                affine_out, dropout_cache = dropout_forward(affine_out, self.dropout_param)</div><div class="line">                dropout_caches.append(dropout_cache)</div><div class="line">            <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">                gamma = self.params[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)]</div><div class="line">                beta = self.params[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)]</div><div class="line">                bn_out, bn_cache = batchnorm_forward(affine_out, gamma, beta, self.bn_params[i])</div><div class="line">                bn_caches.append(bn_cache)</div><div class="line">                relu_out, relu_cache = relu_forward(bn_out)</div><div class="line">            <span class="keyword">else</span>:</div><div class="line">                relu_out, relu_cache = relu_forward(affine_out)</div><div class="line">            relu_caches.append(relu_cache) </div><div class="line">            x = relu_out</div><div class="line">        <span class="keyword">else</span>: </div><div class="line">            <span class="comment"># 最后一层，　无batchnorm和relu层</span></div><div class="line">            scores = affine_out</div><div class="line"></div><div class="line">    <span class="comment"># If test mode return early</span></div><div class="line">    <span class="keyword">if</span> mode == <span class="string">'test'</span>:</div><div class="line">      <span class="keyword">return</span> scores</div><div class="line"></div><div class="line">    loss, grads = <span class="number">0.0</span>, &#123;&#125;</div><div class="line">    <span class="comment"># backward pass</span></div><div class="line">    reg = self.reg</div><div class="line">    loss, dloss = softmax_loss(scores, y)</div><div class="line">    <span class="comment"># loss regularization</span></div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers):</div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        loss += <span class="number">0.5</span> * reg * np.sum(w * w)</div><div class="line">    </div><div class="line">    dout = dloss</div><div class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> xrange(self.num_layers<span class="number">-1</span>, <span class="number">-1</span>, <span class="number">-1</span>):</div><div class="line">        <span class="keyword">if</span> i == self.num_layers - <span class="number">1</span>:</div><div class="line">            affine_cache = affine_caches[i]</div><div class="line">            dx, dw, db = affine_backward(dout, affine_cache)</div><div class="line">        <span class="keyword">else</span>:</div><div class="line">            relu_cache = relu_caches[i]</div><div class="line">            affine_cache = affine_caches[i]</div><div class="line">            <span class="comment"># relu backward</span></div><div class="line">            dx = relu_backward(dout, relu_cache)</div><div class="line">            <span class="comment"># batchnorm backward</span></div><div class="line">            <span class="keyword">if</span> self.use_batchnorm:</div><div class="line">                bn_cache = bn_caches[i]</div><div class="line">                dx, dgamma, dbeta = batchnorm_backward(dx, bn_cache)</div><div class="line">                grads[<span class="string">'gamma'</span> + str(i+<span class="number">1</span>)] = dgamma</div><div class="line">                grads[<span class="string">'beta'</span> + str(i+<span class="number">1</span>)] = dbeta</div><div class="line">            <span class="comment"># dropout backward</span></div><div class="line">            <span class="keyword">if</span> self.use_dropout:</div><div class="line">                dropout_cache = dropout_caches[i]</div><div class="line">                dx = dropout_backward(dx, dropout_cache)</div><div class="line">            <span class="comment"># affine backward</span></div><div class="line">            dx, dw, db = affine_backward(dx, affine_cache)</div><div class="line">       </div><div class="line">        w = self.params[<span class="string">'W'</span> + str(i+<span class="number">1</span>)]</div><div class="line">        <span class="comment"># gradient regularization</span></div><div class="line">        dw += reg * w</div><div class="line">        </div><div class="line">        grads[<span class="string">'W'</span> + str(i+<span class="number">1</span>)] = dw</div><div class="line">        grads[<span class="string">'b'</span> + str(i+<span class="number">1</span>)] = db</div><div class="line">        </div><div class="line">        dout = dx  <span class="comment"># feed into next iteration</span></div><div class="line"></div><div class="line">    <span class="keyword">return</span> loss, grads</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的&lt;a href=&quot;https://github.com/plWang/&quot;&gt;Github&lt;/a&gt;.&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="机器学习" scheme="https://plWang.github.io/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+      <category term="机器学习" scheme="https://plWang.github.io/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="神经网络" scheme="https://plWang.github.io/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>【转】Hexo下mathjax的转义问题</title>
+    <link href="https://plWang.github.io/2016/12/05/hexo-mathjax/"/>
+    <id>https://plWang.github.io/2016/12/05/hexo-mathjax/</id>
+    <published>2016-12-05T07:37:58.000Z</published>
+    <updated>2016-12-05T07:44:59.685Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="http://shomy.top/2016/10/22/hexo-markdown-mathjax/" target="_blank" rel="external">Hexo下mathjax的转义问题</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;&lt;a href=&quot;http://shomy.top/2016/10/22/hexo-markdown-mathjax/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Hexo下mathjax的转义问题&lt;/a&gt;&lt;/p&gt;
+
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>Neural Network3-参数更新方法</title>
+    <link href="https://plWang.github.io/2016/12/05/Neural%20Network3-optim/"/>
+    <id>https://plWang.github.io/2016/12/05/Neural Network3-optim/</id>
+    <published>2016-12-05T06:24:00.000Z</published>
+    <updated>2016-12-05T06:24:33.804Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文主要介绍了神经网络中各种参数的更新方法，包括Momentum, Adagrad, RMSprop, Adam等方法。</p>
+<a id="more"></a>
+<h3 id="Neural-Network3-参数更新方法"><a href="#Neural-Network3-参数更新方法" class="headerlink" title="Neural Network3: 参数更新方法"></a>Neural Network3: 参数更新方法</h3><h4 id="1-普通更新"><a href="#1-普通更新" class="headerlink" title="1. 普通更新"></a>1. 普通更新</h4><p>最简单的形式就死沿着梯度负方向改变参数。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 普通更新</span></div><div class="line">x += -learning_rate * dx</div></pre></td></tr></table></figure>
+<h4 id="2-动量更新-Momentum"><a href="#2-动量更新-Momentum" class="headerlink" title="2. 动量更新(Momentum)"></a>2. 动量更新(Momentum)</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 动量更新</span></div><div class="line">v = mu * v - learning_rate * dx</div><div class="line">x += v</div></pre></td></tr></table></figure>
+<p>在这里引入了一个初始量为0的变量v和一个超参数mu。</p>
+<h4 id="3-Nesterov动量更新"><a href="#3-Nesterov动量更新" class="headerlink" title="3. Nesterov动量更新"></a>3. Nesterov动量更新</h4><p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/nesterov.png" alt="nesterov"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Nesterov动量更新</span></div><div class="line">x_ahead = x + mu * v</div><div class="line">v = mu * v - learning_rate * dx_head</div><div class="line">x += v</div></pre></td></tr></table></figure>
+<p>但是实践上，人们更喜欢和普通SGD或动量更新方法一样简单的表达式，通过对x_ahead = x + mu*v使用变量变换进行改写是可以做到的。上面的代码就变成了</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">v_prev = v #存储备份</div><div class="line">v = mu * v - learning_rate * dx　# 速度更新保持不变</div><div class="line">x += -mu * v_prev + (1 + mu) * v #位置更新变了形式</div></pre></td></tr></table></figure>
+<h4 id="4-Adagrad"><a href="#4-Adagrad" class="headerlink" title="4. Adagrad"></a>4. Adagrad</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cache += dx**2</div><div class="line">x += -learning_rate * dx / (np.sqrt(cache) + eps)</div></pre></td></tr></table></figure>
+<p>用于平滑的变量eps是为了防止出现除以0的情况，一般取值为1e-4到1e-8之间。</p>
+<h4 id="5-RMSprop"><a href="#5-RMSprop" class="headerlink" title="5. RMSprop"></a>5. RMSprop</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cache = decay_rate * cache + (1 - decay_rate) * dx**2</div><div class="line">x += -learning_rate * dx / (np.sqrt(cache) + eps)</div></pre></td></tr></table></figure>
+<p>其中decay_rate是一个超参数，常用的值是[0.9, 0.99, 0.999]。</p>
+<h4 id="6-Adam"><a href="#6-Adam" class="headerlink" title="6. Adam"></a>6. Adam</h4><p>简化版的Adam代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">m = beta*1 + (1-beta1)*dx</div><div class="line">v = beta*v + (1-beta2)*(dx**2)</div><div class="line">x += -learning_rate * m / (np.sqrt(v) + eps)</div></pre></td></tr></table></figure>
+<p>完整的Adam更新算法包含了一个偏置矫正机制，因为m,v两个矩阵初始为0，在没有完全热身之前存在偏差，需要采取一些补偿措施。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文主要介绍了神经网络中各种参数的更新方法，包括Momentum, Adagrad, RMSprop, Adam等方法。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="机器学习" scheme="https://plWang.github.io/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+      <category term="机器学习" scheme="https://plWang.github.io/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="神经网络" scheme="https://plWang.github.io/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Neural Network2-设置数据和模型</title>
+    <link href="https://plWang.github.io/2016/12/05/Neural%20Network2-setModel/"/>
+    <id>https://plWang.github.io/2016/12/05/Neural Network2-setModel/</id>
+    <published>2016-12-05T03:43:00.000Z</published>
+    <updated>2016-12-05T07:29:28.224Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文主要介绍神经网络中数据和模型的一些设置方法。主要包括数据预处理、权重初始化、正则化以及损失函数等内容。</p>
+<a id="more"></a>
+<h3 id="1-数据预处理"><a href="#1-数据预处理" class="headerlink" title="1. 数据预处理"></a>1. 数据预处理</h3><h4 id="1-均值减法（Mean-Subtraction）"><a href="#1-均值减法（Mean-Subtraction）" class="headerlink" title="1. 均值减法（Mean Subtraction）"></a>1. 均值减法（Mean Subtraction）</h4><p>均值减法是最常用的预处理操作。它对数据中的每个特征减去平均值，从几何上可以理解为在每个维度上都将数据云的中心迁移到原点。在numpy中，可以通过<code>X -= np.mean(X,axis=0)</code>来实现。在图像中，更常用的是对所哟与像素都减去同一个值，即<code>X -= np.mean(X)</code>，也可以在R、G、B三个通道上分别进行操作。</p>
+<h4 id="2-归一化（Normalization）"><a href="#2-归一化（Normalization）" class="headerlink" title="2. 归一化（Normalization）"></a>2. 归一化（Normalization）</h4><p>有两种方法可以进行归一化。第一种是先对数据零中心化，然后每个维度都除以其标准差。其实现代码为<code>X /= np.std(X, axis=0)</code>；第二种是对每个维度都做归一化，使其最大值和最小值分别为+1和-1。在图像处理中，由于所有像素的值都在(0,255)之间，因此一般不需要进行归一化操作。</p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/mormalization.png" alt="mormalization"></p>
+<h4 id="3-PCA和白化（Whitening）"><a href="#3-PCA和白化（Whitening）" class="headerlink" title="3. PCA和白化（Whitening）"></a>3. PCA和白化（Whitening）</h4><p> 白化操作的输入是特征基准上的数据，然后对每个维度除以其特征值来对数值范围进行归一化。该变换的几何解释是：如果数据服从多变量的高斯分布，那么经过白化后，数据的分布将会是一个均值为零，且协方差相等的矩阵。其操作代码为`</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">X -= np.mean(X, axis=<span class="number">0</span>) <span class="comment">#对数据进行零中心化</span></div><div class="line">cov = np.dot(X.T, X)/X.shape[<span class="number">0</span>] <span class="comment">#得到数据的协方差矩阵</span></div><div class="line"></div><div class="line">U,S,V = np.linalg.svd(cov)　<span class="comment">#将协方差矩阵进行奇异值分解</span></div><div class="line">Xrot = np.dot(X, U)　<span class="comment">#对数据去相关性</span></div><div class="line">Xrot_reduced = np.dot(X, U[:,:<span class="number">100</span>]) <span class="comment">#取前100维</span></div><div class="line"></div><div class="line">Xwhite = Xrot/np.sqrt(S + <span class="number">1e-5</span>) <span class="comment">#白化，除以特征值, 分母中添加一个小常数防止分母为0</span></div></pre></td></tr></table></figure>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/whitening.png" alt="whitening"></p>
+<blockquote>
+<p><strong>注意！常见错误</strong>：任何预处理策略都只能在训练集数据上进行计算，算法验证完毕后再应用到验证集和测试集上。比如数据均值操作，应当先将数据分为训练/验证/测试集，<strong>只从训练集中求图片的平均值</strong>，然后在各个集（训练/验证/测试集）中的图像再减去这个均值。</p>
+</blockquote>
+<h3 id="2-权重初始化"><a href="#2-权重初始化" class="headerlink" title="2. 权重初始化"></a>2. 权重初始化</h3><h4 id="1-全零初始化-错误"><a href="#1-全零初始化-错误" class="headerlink" title="1. 全零初始化(错误)"></a>1. <del>全零初始化</del>(错误)</h4><p>在训练完毕后，虽然不知道网络中每个权重的最终值应该是多少，但如果数据经过了恰当的归一化的话，就可以假设所有权重数值中大约一半为正数，一半为负数。这样，一个听起来蛮合理的想法就是把这些权重的初始值都设为0吧，因为在期望上来说0是最合理的猜测。</p>
+<p><strong>这种做法是错误的。</strong>因为如果网络中的每个神经元都计算出同样的输出，然后它们就会在反向传播中计算出同样的梯度，从而进行同样的参数更新。换句话说，如果权重被初始化为同样的值，神经元之间就失去了不对称性的源头。</p>
+<h4 id="2-小随机数初始化"><a href="#2-小随机数初始化" class="headerlink" title="2. 小随机数初始化"></a>2. 小随机数初始化</h4><p>因此，权重初始值要非常接近0又不能等于0。解决方法就是将权重初始为很小的数值，以此来<strong>打破对称性</strong>。小随机数权重初始化的方法是<code>W = 0.01 * np.random.randn(D, H)</code>。</p>
+<p><strong>警告</strong>：然而并不是小数值一定会得到好的结果。例如，一个神经网络的层中的权重值很小，那么在反向传播的时候就会计算出非常小的梯度（因为梯度与权重值是成比例的）。这就会很大程度上减小反向传播中的“梯度信号”，在深度网络中，就会出现问题。</p>
+<p><strong>使用1/sqrt(n)校准方差</strong>。上面做法存在一个问题，随着输入数据量的增长，随机初始化的神经元的输出数据的分布中的方差也在增大。我们可以除以输入数据量的平方根来调整其数值范围，这样神经元输出的方差就归一化到1了。也就是说，建议将神经元的权重向量初始化为:<code>w = np.random.randn(n) / sqrt(n)</code>。其中<strong>n</strong>是输入数据的数量。这样就保证了网络中所有神经元起始时有近似同样的输出分布。<strong>实践经验证明，这样做可以提高收敛的速度。</strong></p>
+<h4 id="3-稀疏初始化-Sparse-Initialization"><a href="#3-稀疏初始化-Sparse-Initialization" class="headerlink" title="3. 稀疏初始化(Sparse Initialization)"></a>3. 稀疏初始化(Sparse Initialization)</h4><p>另一个处理非标定方差的方法是将所有权重矩阵设为0，但是为了打破对称性，每个神经元都同下一层固定数目的神经元随机连接（其权重数值由一个小的高斯分布生成）。一个比较典型的连接数目是10个。</p>
+<h4 id="4-偏置-bias-的初始化"><a href="#4-偏置-bias-的初始化" class="headerlink" title="4. 偏置(bias)的初始化"></a>4. 偏置(bias)的初始化</h4><p>通常将偏置初始化为0，这是因为随机小数值权重矩阵已经打破了对称性。对于ReLU非线性激活函数，有研究人员喜欢使用如0.01这样的小数值常量作为所有偏置的初始值，但这样是不是总能提高算法性能并不清楚。</p>
+<p><strong>实践：</strong>当前的推荐是使用ReLU函数，并且使用<code>w=np.random.randn(n)*sqrt(2.0/n)</code>来进行初始化。</p>
+<h4 id="5-批量归一化（Batch-Normalization）"><a href="#5-批量归一化（Batch-Normalization）" class="headerlink" title="5. 批量归一化（Batch Normalization）"></a>5. 批量归一化（Batch Normalization）</h4><p>批量归一化是最近才提出来的方法，该方法减轻了如何合理初始化神经网络这个棘手问题带来的头痛。其做法是让激活数据在训练开始前经过一个网络，网络处理数据使其服从标准高斯分布。在实现层面，应用这个技巧通常意味着<strong>全连接层（或者卷积层）与激活函数之间添加一个BatchNorm层</strong>。实践中，在神经网络中使用批量归一化已经变得非常常见，使用了批量归一化的网络<strong>对于不好的初始值有更强的鲁棒性</strong>。</p>
+<p>Batch Normalization的做法是对于输入的mini-batch数据，求它们在每个维度上的均值和方差<br>$$<br>\hat{x}^{(k)} = \frac{x^{(k)} - E[x^{(k)}]}{\sqrt{Var[x^{(k)}]}}<br>$$<br>由于分母中方差可能为0，为了防止数值计算不稳定，通常在分母中加一个小的常数$\epsilon$，即<br>$$<br>\hat{x}^{(k)} = \frac{x^{(k)} - E[x^{(k)}]}{\sqrt{Var[x^{(k)}] + \epsilon}}<br>$$<br>经过批量归一化输出的数据是零均值/单位方差（zero-mean/unit variance）的，但是我们确实需要激活函数接收的都是零均值/单位方差的输入吗？因此在归一化之后需要将数据变换到我们想要的数值范围上，<br>$$<br>y^{(k)} = \gamma^{(k)} \hat{x}^{(k)} + \beta^{(k)}<br>$$<br>其中$\gamma, \beta$两个参数是可以通过学习得到的。当$\gamma^{(k)} = \sqrt{Var[x^{(k)}]}, \beta^{(k)}=E[x^{(k)}]$时，数据就可以恢复为原来的输出。</p>
+<p><strong>批量归一化算法步骤（训练阶段）</strong></p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/batchnorm-train.png" alt="batchnorm-train"></p>
+<p><strong>批量归一化算法步骤（测试阶段）</strong></p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/batchnorm-test.png" alt="batchnorm-test"></p>
+<p>需要注意的是，在测试阶段，批量归一化的步骤与训练时是不同的，均值和方差不是由输入数据计算得到的，而是直接使用一个在训练阶段得到的固定值（如训练阶段的running average, <code>running_mean = momentum * running_mean + (1-running_mean * sample_mean)</code>）。</p>
+<h3 id="3-正则化"><a href="#3-正则化" class="headerlink" title="3. 正则化"></a>3. 正则化</h3><h4 id="1-L2正则化"><a href="#1-L2正则化" class="headerlink" title="1. L2正则化"></a>1. L2正则化</h4><p>L2正则化可能是最常用的正则化方法，它对于每个权重w，向目标函数中增加了一个$\frac{1}{2}\lambda w^2$项。L2正则化可以直观理解为<strong>它对于大数值的权重向量进行严厉惩罚，倾向于更加分散的权重向量</strong>。使网络更倾向于使用所有特征，而不是严重依赖于输入特征中的某些小部分特征。</p>
+<h4 id="2-L1正则化"><a href="#2-L1正则化" class="headerlink" title="2. L1正则化"></a>2. L1正则化</h4><p>L1正则化是另一个相对常用的正则化方法，它对每一个w，都向目标函数增加一个$\lambda|w|$。L1和L2正则化也可以进行组合：$\lambda_1|w|+\lambda_2 w^2$，这被称作Elastic net regularization。L1正则化会让权重向量在最优化的过程中变得<strong>稀疏</strong>。也就是说，使用L1正则化的神经元最后使用的是它们最重要的输入数据的稀疏子集，同时对于噪音输入则几乎是不变的了。<strong>在实践中，如果不是特别关注某些明确的特征选择，一般说来L2正则化都会比L1正则化效果好。</strong></p>
+<h4 id="3-最大范式约束-Max-norm-constraints"><a href="#3-最大范式约束-Max-norm-constraints" class="headerlink" title="3. 最大范式约束(Max norm constraints)"></a>3. 最大范式约束(Max norm constraints)</h4><p>另一种形式的正则化是给每个神经元中权重向量的量级设定上限，并使用投影梯度下降来确保这一约束。在实践中，与之对应的是参数更新方式不变，然后要求神经元中的权重向量$\overrightarrow{w}$必须满足$|\overrightarrow{w}|_2 &lt; c$这一条件，一般c值取3或者4。这种正则化还有一个良好的性质，即使在学习率设置过高的时候，网络中也不会出现数值“爆炸”，这是因为它的参数更新始终是被限制着的。</p>
+<h4 id="4-随机失活-Dropout"><a href="#4-随机失活-Dropout" class="headerlink" title="4. 随机失活(Dropout)"></a>4. 随机失活(Dropout)</h4><p>Dropout是一种简单又及其有效的正则化方法。在训练的时候，dropout的实现方法是让神经元以超参数p的概率被激活或被设置为0。</p>
+<p>在训练过程中，随机失活可以被认为是对完整的神经网络抽样出一些子集，每次基于输入数据只更新子网络的参数（然而，数量巨大的子网络们并不是相互独立的，因为它们都共享参数）。在测试过程中使用随机失活，可以理解为是对数量巨大的子网络们做了模型集成（model ensemble），以此来计算出一个平均的预测。</p>
+<p>1个三层神经网络的普通版随机失活可以用下面的代码实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="string">""" 普通版随机失活: 不推荐实现 (看下面笔记) """</span></div><div class="line"></div><div class="line">p = <span class="number">0.5</span> <span class="comment"># 激活神经元的概率. p值更高 = 随机失活更弱</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">train_step</span><span class="params">(X)</span>:</span></div><div class="line">  <span class="string">""" X中是输入数据 """</span></div><div class="line">  </div><div class="line">  <span class="comment"># 3层neural network的前向传播</span></div><div class="line">  H1 = np.maximum(<span class="number">0</span>, np.dot(W1, X) + b1)</div><div class="line">  U1 = np.random.rand(*H1.shape) &lt; p <span class="comment"># 第一个随机失活遮罩</span></div><div class="line">  H1 *= U1 <span class="comment"># drop!</span></div><div class="line">  H2 = np.maximum(<span class="number">0</span>, np.dot(W2, H1) + b2)</div><div class="line">  U2 = np.random.rand(*H2.shape) &lt; p <span class="comment"># 第二个随机失活遮罩</span></div><div class="line">  H2 *= U2 <span class="comment"># drop!</span></div><div class="line">  out = np.dot(W3, H2) + b3</div><div class="line">  </div><div class="line">  <span class="comment"># 反向传播:计算梯度... (略)</span></div><div class="line">  <span class="comment"># 进行参数更新... (略)</span></div><div class="line">  </div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">predict</span><span class="params">(X)</span>:</span></div><div class="line">  <span class="comment"># 前向传播时模型集成</span></div><div class="line">  H1 = np.maximum(<span class="number">0</span>, np.dot(W1, X) + b1) * p <span class="comment"># 注意：激活数据要乘以p</span></div><div class="line">  H2 = np.maximum(<span class="number">0</span>, np.dot(W2, H1) + b2) * p <span class="comment"># 注意：激活数据要乘以p</span></div><div class="line">  out = np.dot(W3, H2) + b3</div></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：在predict函数中不进行随机失活，但是对于两个隐层的输出都要乘以p，调整其数值范围。这一点非常重要。</p>
+</blockquote>
+<p>上述操作不好的性质是必须在测试时对激活数据要按照p进行数值范围调整。既然测试性能如此关键，实际更倾向使用<strong>反向随机失活（inverted dropout）</strong>，它是在训练时就进行数值范围调整，从而让前向传播在测试时保持不变。这样做还有一个好处，无论你决定是否使用随机失活，预测方法的代码可以保持不变。反向随机失活的代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="string">""" </span></div><div class="line">反向随机失活: 推荐实现方式.</div><div class="line">在训练的时候drop和调整数值范围，测试时不做任何事.</div><div class="line">"""</div><div class="line"></div><div class="line">p = <span class="number">0.5</span> <span class="comment"># 激活神经元的概率. p值更高 = 随机失活更弱</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">train_step</span><span class="params">(X)</span>:</span></div><div class="line">  <span class="comment"># 3层neural network的前向传播</span></div><div class="line">  H1 = np.maximum(<span class="number">0</span>, np.dot(W1, X) + b1)</div><div class="line">  U1 = (np.random.rand(*H1.shape) &lt; p) / p <span class="comment"># 第一个随机失活遮罩. 注意/p!</span></div><div class="line">  H1 *= U1 <span class="comment"># drop!</span></div><div class="line">  H2 = np.maximum(<span class="number">0</span>, np.dot(W2, H1) + b2)</div><div class="line">  U2 = (np.random.rand(*H2.shape) &lt; p) / p <span class="comment"># 第二个随机失活遮罩. 注意/p!</span></div><div class="line">  H2 *= U2 <span class="comment"># drop!</span></div><div class="line">  out = np.dot(W3, H2) + b3</div><div class="line"></div><div class="line">  <span class="comment"># 反向传播:计算梯度... (略)</span></div><div class="line">  <span class="comment"># 进行参数更新... (略)</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">predict</span><span class="params">(X)</span>:</span></div><div class="line">  <span class="comment"># 前向传播时模型集成</span></div><div class="line">  H1 = np.maximum(<span class="number">0</span>, np.dot(W1, X) + b1) <span class="comment"># 不用数值范围调整了</span></div><div class="line">  H2 = np.maximum(<span class="number">0</span>, np.dot(W2, H1) + b2)</div><div class="line">  out = np.dot(W3, H2) + b3</div></pre></td></tr></table></figure>
+<p><strong>偏置正则化。</strong>对偏置参数的正则化并不常见，因为它们在矩阵乘法中和输入数据并不产生互动，所以并不需要控制其在数据维度上的效果。</p>
+<p><strong>每层正则化。</strong>对于不同的层进行不同强度的正则化很少见（可能除了输出层以外），关于这个思路的相关文献也很少。</p>
+<p><strong>实践</strong>：通过交叉验证获得一个全局使用的L2正则化强度是比较常见的。在使用L2正则化的同时在所有层后面使用随机失活也很常见。p值一般默认设为0.5，也可能在验证集上调参。</p>
+<h3 id="4-损失函数"><a href="#4-损失函数" class="headerlink" title="4. 损失函数"></a>4. 损失函数</h3><h4 id="1-Multiclass-SVM-Loss"><a href="#1-Multiclass-SVM-Loss" class="headerlink" title="1. Multiclass SVM Loss"></a>1. Multiclass SVM Loss</h4><p><strong>损失函数</strong><br>$$<br>L_i=\sum_{j \neq y_i}{max(0,s_j-s_{y_i}+1)}<br>$$</p>
+<p>这种损失函数的形式叫作<strong>折叶损失(hinge loss)</strong></p>
+<p><strong>梯度</strong></p>
+<p>对正确分类的行的梯度<br>$$<br>\bigtriangledown_{w_{y_i}}L_i = -(\sum_{j \neq y_i}\mathbb{1}(\omega_j^T x_i - \omega_{y_i}^T x_i + \Delta &gt; 0))x_i<br>$$</p>
+<p>对不正确分类的行的梯度</p>
+<p>$$<br>\bigtriangledown_{w_j}L_i = \mathbb{1}(\omega_j^T x_i - \omega_{y_i}^T x_i + \Delta &gt; 0)x_i<br>$$</p>
+<p>即</p>
+<p>$$<br>Q_{i,k} =<br>\begin{cases}<br>\bigtriangledown_{\omega_{y_i}}L_i \quad if \ j=y_i \\<br>\bigtriangledown_{\omega_{j}}L_i \quad otherwise<br>\end{cases}<br>$$</p>
+<p>$$<br>\bigtriangledown_\omega L = \frac{1}{m}(Q^TX)^T = \frac{1}{N}X^TQ<br>$$</p>
+<h4 id="2-Softmax-Loss"><a href="#2-Softmax-Loss" class="headerlink" title="2. Softmax Loss"></a>2. Softmax Loss</h4><p><strong>损失函数</strong><br>$$<br>L_i = -log(\frac{e^{f_{y_i}}}{\sum_je^{f_j}}) = -f_{y_i} + log(\sum_je^{f_i})<br>$$<br>这种损失函数的形式叫做<strong>交叉熵损失(cross-entropy loss)</strong></p>
+<p>设$p_i = \frac{e^{f_{y_i}}}{\sum_je^{fj}}$, 其导数为<br>$$<br>\frac{\partial p_i}{\partial y_j} = \frac{[i=j]e^{y_i}\sum_c e^{y_c} - e^{y_i}e^{y_j}}{\sum_c e^{y_c}} = [i=j]p_i - p_ip_j<br>$$<br>所以损失函数的梯度为<br>$$<br>\frac{\partial L_i}{\partial y_i} = -\frac{1}{p_i} \frac{\partial p_i}{\partial y_i} = -[i=j] + p_j<br>$$<br>其中，符号[]的意义为，[A] is 1 if A is true, and 0 if A is false.</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文主要介绍神经网络中数据和模型的一些设置方法。主要包括数据预处理、权重初始化、正则化以及损失函数等内容。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="机器学习" scheme="https://plWang.github.io/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+      <category term="机器学习" scheme="https://plWang.github.io/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="神经网络" scheme="https://plWang.github.io/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Neural Network1-activation function</title>
+    <link href="https://plWang.github.io/2016/12/05/NeuralNetwork1-activationFunction/"/>
+    <id>https://plWang.github.io/2016/12/05/NeuralNetwork1-activationFunction/</id>
+    <published>2016-12-05T03:38:00.000Z</published>
+    <updated>2016-12-05T07:30:40.580Z</updated>
+    
+    <content type="html"><![CDATA[<p>这是神经网络基础知识的总结，第一部分介绍了神经网络中常用的激活函数，包括Sigmoid, tanh, ReLU, Maxout等。具体介绍了各种激活函数的形式以及优缺点。</p>
+<a id="more"></a>
+<h3 id="1-常用激活函数"><a href="#1-常用激活函数" class="headerlink" title="1. 常用激活函数"></a>1. 常用激活函数</h3><p><strong>1. Sigmoid函数：</strong><br>$$<br>\sigma(x) = 1/(1 + e^{-x})<br>$$<br>它输入实数值并将它挤压到0到1范围内。</p>
+<p>但是sigmoid函数在实际中已经很少使用，因为它有两个主要缺点：</p>
+<ul>
+<li>sigmoid函数<strong>饱和</strong>使梯度值消失。当神经元的激活在接近0或1附近时会饱和：在这些区域，梯度值几乎为0。在反向传播的时候，这个(局部)梯度会与整个损失函数关于这个门单元的梯度相乘，导致全局的梯度接近0 。另外，<strong>为了防止饱和，必须对权重矩阵初始化特别留意</strong>。如果权重初始化过大，那么大多数神经元将会饱和，导致网络几乎不学习了。</li>
+<li><p>sigmoid函数的输出值<strong>不是零中心(not zero-centered)</strong>的。如果输入神经元的数据总是正数(比如在$f=w^Tx+b$中每个元素x&gt;0)，那么关于权重w的梯度在反向传播时就全是正数或负数。这将会导致梯度下降更新时呈Z字型。</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/sigmoid_tanh.png" alt="sigmoid_tanh"></p>
+</li>
+</ul>
+<p><strong>2. tanh函数</strong></p>
+<p>tanh函数将数值压缩到[-1,1]之间。和sigmoid函数一样，它也会有饱和问题。但是tanh函数的输出是零中心的。<strong>在实际操作中，tanh函数比sigmoid更受欢迎。</strong></p>
+<p><strong>3. ReLU函数</strong></p>
+<p>ReLU函数的形式如下:<br>$$<br>f(x) = max(0,x)<br>$$<br> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/ReLU.png" alt="ReLU"></p>
+<p><strong>优点：</strong></p>
+<ul>
+<li>相较于sigmoid和tanh函数，ReLU对于随机梯度下降的收敛有巨大的加速作用。据称这是由于它的线性，非饱和的公式导致的</li>
+<li>sigmoid和tanh神经元含有指数运算等非常消耗计算资源的操作，而ReLU可以简单的通过对一个矩阵进行阈值计算得到。</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>ReLU单元比较脆弱并随时可能死掉。比如，当一个很大的梯度流过ReLU神经元的时候，可能会导致梯度更新到一种特别的状态，在这种状态下神经元将无法被其他任何数据点再次激活。如果这种情况发生，那么从此流过这个神经元的梯度将都变成0(==Why==)。<strong>通过合理设置学习率(学习率不要设置的太高)，这种情况的发生概率会降低。</strong></li>
+</ul>
+<p><strong>4. Leaky ReLU</strong></p>
+<p>Leaky ReLU是为解决“ReLU”死亡问题的尝试。其函数公式为$f(x) = 1(x&lt;0)(\alpha x) + 1(x \geq 0)(x)$，其中$\alpha$是一个很小的常量。</p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/LeakyReLU.png" alt="LeakyReLU"></p>
+<p>$\alpha$还可以设置成一个参数，在反向传播中进行更新，这种方法叫做PReLU。</p>
+<p>还有一种ReLU函数的改进叫做Exponential Linear Units(ELU)，其公式如下：<br>$$<br>f(x) =<br>\begin{cases}<br>x, \quad &amp;if \ x&gt;0 \\<br>\alpha(exp(x) - 1), \quad &amp;if \ x\leq 0<br>\end{cases}<br>$$<br> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/ELU.png" alt="ELU"></p>
+<p><strong>优点：</strong></p>
+<ul>
+<li>ReLU的所有优点</li>
+<li>不会死亡</li>
+<li>更接近零均值输出</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>计算消耗高，需要计算exp()</li>
+</ul>
+<p><strong>5. Maxout</strong></p>
+<p>Maxout是对ReLU和Leaky ReLU的一般归纳，它的函数是$f(x) = max(w_1^Tx+b_1, w_2^Tx+b_2)$。这样的Maxout函数就拥有ReLU单元的所有优点（线性和非饱和），而没有它的缺点（死亡的ReLU单元）。但是它每个神经元的参数数量翻倍，导致整个网络的参数数量激增。</p>
+<blockquote>
+<p>注意：在同一个网络混用多种神经元是很少见的，虽然没什么根本性问题来阻止这么做。</p>
+</blockquote>
+<p>一句话来总结<strong>“该使用哪种神经元呢？”</strong>：用ReLU函数，注意设置好学习率，或许可以监控网络中死亡神经元所占的比例。如果单元死亡问题困扰你，那么使用Leaky ReLU或maxout。不要使用sigmoid。可以尝试使用tanh，但它的效果应该不如ReLU或Maxout。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;这是神经网络基础知识的总结，第一部分介绍了神经网络中常用的激活函数，包括Sigmoid, tanh, ReLU, Maxout等。具体介绍了各种激活函数的形式以及优缺点。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="机器学习" scheme="https://plWang.github.io/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+    
+      <category term="机器学习" scheme="https://plWang.github.io/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="神经网络" scheme="https://plWang.github.io/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Flask开发实践（三）</title>
+    <link href="https://plWang.github.io/2016/10/31/flaskDevInPractice-3/"/>
+    <id>https://plWang.github.io/2016/10/31/flaskDevInPractice-3/</id>
+    <published>2016-10-31T06:33:25.000Z</published>
+    <updated>2016-11-03T08:28:24.063Z</updated>
+    
+    <content type="html"><![CDATA[<p>​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文<a href="https://plwang.github.io/2016/10/29/flaskDevInPractice-1/">Flask开发实践（一）</a>和<a href="https://plwang.github.io/2016/10/31/flaskDevInPractice-2/">Flask开发实践（二）</a>，完整的教程可以参照<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/" target="_blank" rel="external">Flask-by-Example</a>。我的完整源码已经分享到我的<a href="https://github.com/plWang/wordcount" target="_blank" rel="external">Github</a>上，大家可以参考。</p>
+<a id="more"></a>
+<h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><p>在将自己的Web应用部署到Heroku上之前，确保自己已经有了一个Heroku账号，并且下载和安装了Heroku <a href="https://devcenter.heroku.com/articles/heroku-command-line" target="_blank" rel="external">Toolbelt</a>。Heroku官网上有一个简单的入门教程（<a href="https://devcenter.heroku.com/articles/getting-started-with-python#introduction" target="_blank" rel="external">Getting started with python</a>），大家可以参考。</p>
+<h3 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h3><h4 id="1-安装gunicorn"><a href="#1-安装gunicorn" class="headerlink" title="1. 安装gunicorn"></a>1. 安装gunicorn</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pip install gunicorn</div></pre></td></tr></table></figure>
+<h4 id="2-创建Procfile和runtime文件"><a href="#2-创建Procfile和runtime文件" class="headerlink" title="2. 创建Procfile和runtime文件"></a>2. 创建Procfile和runtime文件</h4><p>在你的应用根目录下创建一个Procfile文件并加入以下内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: gunicorn &lt;app&gt;:app</div></pre></td></tr></table></figure>
+<p>其中，\<app>部分你需要填写你的应用中运行应用实例的python文件的名称，即app.run()所在的文件的名称。如果你的应用是单一模块的应用，它很可能在app.py中。如果你的应用是基于包的，那么它可能是run.py或者其他你命名的包含应用运行实例的文件。在我的应用中，它看起来是这个样子的：</app></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: gunicorn run:app</div></pre></td></tr></table></figure>
+<p>另外，你还需要创建一个runtime.txt文件，在这个文件中你可以指定应用运行的python环境的版本，比如</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python 2.7.12</div></pre></td></tr></table></figure>
+<h4 id="3-在Heroku中创建应用"><a href="#3-在Heroku中创建应用" class="headerlink" title="3. 在Heroku中创建应用"></a>3. 在Heroku中创建应用</h4><p>在命令行中运行</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku create &lt;yourappname&gt;</div></pre></td></tr></table></figure>
+<p>\<yourappname>是你自己命名的heroku应用的名字。</yourappname></p>
+<p>接下来，将你的应用添加到远程git中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git remote add pro git@heroku.com:YOUR_APP_NAME.git</div></pre></td></tr></table></figure>
+<p>然后推送到远程仓库中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git push prom master</div></pre></td></tr></table></figure>
+<p>推送之后，heroku会检测到python应用，并且根据requirements.txt的内容安装相应的依赖。</p>
+<h4 id="4-Heroku设置"><a href="#4-Heroku设置" class="headerlink" title="4. Heroku设置"></a>4. Heroku设置</h4><p>我们在本地环境中设置的环境变量无法同步到Heroku中，但我们可以通过heroku config命令设置heroku中的环境变量的值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku config: set APP_SETTINGS=config.ProductionConfig</div></pre></td></tr></table></figure>
+<h4 id="5-设置数据库连接"><a href="#5-设置数据库连接" class="headerlink" title="5. 设置数据库连接"></a>5. 设置数据库连接</h4><p>创建heroku应用时一般会自动创建一个postgresql数据库，我们可以通过heroku config命令查看数据库的环境变量设置。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ heroku config</div><div class="line">=== wordcountpl-pro Config Vars</div><div class="line">APP_SETTINGS:         config.ProductionConfig</div><div class="line">DATABASE_URL:         postgres://zjaqehsogkwdpf:tYfE-hzC2WdIpNQhq1X-bqpmrE@ec2-107-20-136-222.compute-1.amazonaws.com:5432/d2sd6e2a42g9pp</div><div class="line">REDISTOGO_URL:        redis://redistogo:ace458199c86d6b3ecc83b24f177bdfc@viperfish.redistogo.com:11743/</div></pre></td></tr></table></figure>
+<p>如果你的环境变量中没有DATABASE_URL这一项，那么可以自己添加postgresql插件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroki addons:create heroku-postgresql:hobby-dev</div></pre></td></tr></table></figure>
+<p>或者在网页Dashboard中进行添加。</p>
+<p>然后我们需要进行数据库迁移。如果你之前已经在本地运行过数据库迁移命令，那么现在只需要在heroku中运行db upgrade命令就可以将数据库迁移到heroku上。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">$ heroku run python manage.py db upgrade --app wordcount-stage</div><div class="line">  Running python manage.py db upgrade on wordcount-stage... up, run.5677</div><div class="line">  INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.</div><div class="line">  INFO  [alembic.runtime.migration] Will assume transactional DDL.</div><div class="line">  INFO  [alembic.runtime.migration] Running upgrade  -&gt; 63dba2060f71, empty message</div></pre></td></tr></table></figure>
+<p>如果你之前没有运行db migrate命令或者数据模型已经发生改变，你需要在本地先运行<code>python manage.py db migrate</code>命令，将变更push到远程仓库后，然后再进行上面的操作。</p>
+<blockquote>
+<p>注意：在heroku中不需要运行<code>python manage.py db init</code>和<code>python manage.py db migrate</code>命令，只需要进行数据库的升级即可。</p>
+</blockquote>
+<h4 id="6-设置Redis连接"><a href="#6-设置Redis连接" class="headerlink" title="6. 设置Redis连接"></a>6. 设置Redis连接</h4><p>在heroku中添加redis组件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">heroku addons:create redistogo:nano</div></pre></td></tr></table></figure>
+<p>查看heroku config中是否有REDISTOGO_URL的环境变量。</p>
+<p>确保我们的程序中有下面的内容：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">redis_url = os.getenv(<span class="string">'REDISTOGO_URL'</span>, <span class="string">'redis://localhost:6379'</span>)</div></pre></td></tr></table></figure>
+<h4 id="7-修改Procfile文件"><a href="#7-修改Procfile文件" class="headerlink" title="7. 修改Procfile文件"></a>7. 修改Procfile文件</h4><p>在我们的程序中，需要一个进程运行web应用，另外一个进程运行worker。在heroku中，我们也应该在每个dyno中只运行一个进程。通过<code>heroku run python worker.py</code>命令在另外一个dyno中运行worker进程。</p>
+<p>然而，由于我们的应用比较简单，也可以将web应用和worker运行在同一个dyno中。</p>
+<p>首先，我们需要新建一个脚本，命名为heroku.sh</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">#!/bin/bash</div><div class="line">gunicorn app:app --daemon</div><div class="line">python worker.py</div></pre></td></tr></table></figure>
+<p>然后修改Procfile文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">web: sh heroku.sh</div></pre></td></tr></table></figure>
+<p>将改动push到远程仓库中，这样我们的web应用就已经成功部署到heroku上并可以正常运行了。</p>
+<p>运行heroku open命令就可以打开相应的网页查看效果。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文&lt;a href=&quot;https://plwang.github.io/2016/10/29/flaskDevInPractice-1/&quot;&gt;Flask开发实践（一）&lt;/a&gt;和&lt;a href=&quot;https://plwang.github.io/2016/10/31/flaskDevInPractice-2/&quot;&gt;Flask开发实践（二）&lt;/a&gt;，完整的教程可以参照&lt;a href=&quot;https://realpython.com/blog/python/flask-by-example-part-1-project-setup/&quot;&gt;Flask-by-Example&lt;/a&gt;。我的完整源码已经分享到我的&lt;a href=&quot;https://github.com/plWang/wordcount&quot;&gt;Github&lt;/a&gt;上，大家可以参考。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="python" scheme="https://plWang.github.io/categories/python/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/categories/python/web%E5%BC%80%E5%8F%91/"/>
+    
+    
+      <category term="web开发" scheme="https://plWang.github.io/tags/web%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="Flask" scheme="https://plWang.github.io/tags/Flask/"/>
+    
+      <category term="heroku" scheme="https://plWang.github.io/tags/heroku/"/>
+    
+      <category term="flask应用部署" scheme="https://plWang.github.io/tags/flask%E5%BA%94%E7%94%A8%E9%83%A8%E7%BD%B2/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Flask开发实践（二）</title>
+    <link href="https://plWang.github.io/2016/10/31/flaskDevInPractice-2/"/>
+    <id>https://plWang.github.io/2016/10/31/flaskDevInPractice-2/</id>
+    <published>2016-10-31T06:19:31.000Z</published>
+    <updated>2016-11-03T08:27:47.267Z</updated>
+    
+    <content type="html"><![CDATA[<p>这是Flask开发系列的第二部分，继续记录我在前端中使用AngularJS进行轮询以及使用D3创建图表的过程和经验。具体的教程可以参考<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/" target="_blank" rel="external">Flask-by-Example</a>。我自己的完整源码已经分享到我的<a href="https://github.com/plWang/wordcount" target="_blank" rel="external">Github</a>上。</p>
+<a id="more"></a>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;这是Flask开发系列的第二部分，继续记录我在前端中使用AngularJS进行轮询以及使用D3创建图表的过程和经验。具体的教程可以参考&lt;a href=&quot;https://realpython.com/blog/python/flask-by-example-part-1-project-setup/&quot;&gt;Flask-by-Example&lt;/a&gt;。我自己的完整源码已经分享到我的&lt;a href=&quot;https://github.com/plWang/wordcount&quot;&gt;Github&lt;/a&gt;上。&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="python" scheme="https://plWang.github.io/categories/python/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/categories/python/web%E5%BC%80%E5%8F%91/"/>
+    
+    
+      <category term="flask" scheme="https://plWang.github.io/tags/flask/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/tags/web%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="AngularJS" scheme="https://plWang.github.io/tags/AngularJS/"/>
+    
+      <category term="D3" scheme="https://plWang.github.io/tags/D3/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Flask开发实践（一）</title>
+    <link href="https://plWang.github.io/2016/10/29/flaskDevInPractice-1/"/>
+    <id>https://plWang.github.io/2016/10/29/flaskDevInPractice-1/</id>
+    <published>2016-10-29T05:54:18.000Z</published>
+    <updated>2016-11-03T08:27:23.323Z</updated>
+    
+    <content type="html"><![CDATA[<p>最近开始学习使用flask框架进行web应用开发，在网上发现了一个很好的系列教程<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/" target="_blank" rel="external">Flask-by-Example</a>。这个教程共包含八个部分，详细讲解了环境安装、项目组织、数据库连接、使用redis建立任务队列以及使用AngularJS进行前后端的数据交互、使用D3进行数据可视化的完整步骤。下面是我跟随上面的教程进行Flask开发的具体过程以及自己总结的一些经验。我的完整源码请参照<a href="https://github.com/plWang/wordcount" target="_blank" rel="external">https://github.com/plWang/wordcount</a></p>
+<a id="more"></a>
+<h3 id="1-项目组织"><a href="#1-项目组织" class="headerlink" title="1. 项目组织"></a>1. 项目组织</h3><p>使用flask时你需要自己组织自己的项目，这具有很大的灵活性，但你不得不思考，如何更好的组织自己的项目，以便于开发和部署。</p>
+<p>在开发一个稍微复杂一点的项目时，使用包的方式组织项目时一个不错的方法。基于包的应用的版本库看起来就像是这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">config.py</div><div class="line">requirements.txt</div><div class="line">run.py</div><div class="line">instance/</div><div class="line">  /config.py</div><div class="line">yourapp/</div><div class="line">  /__init__.py</div><div class="line">  /views.py</div><div class="line">  /models.py</div><div class="line">  /forms.py</div><div class="line">  /static/</div><div class="line">  /templates/</div></pre></td></tr></table></figure>
+<p>有关模型的定义全部放在models.py中，有关路由的定义全部放在views.py中，有关表单的定义全部放在forms.py中。</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>作用</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>run.py</td>
+<td>用于启动一个开发服务器。它从你的包中获得应用的副本并运行它。</td>
+<td></td>
+</tr>
+<tr>
+<td>requirements.txt</td>
+<td>列出你的应用依赖的所有Python包</td>
+<td></td>
+</tr>
+<tr>
+<td>config.py</td>
+<td>包含了你的应用需要的大多数配置变量</td>
+<td></td>
+</tr>
+<tr>
+<td>instance/config.py</td>
+<td>这个文件包含了不应该出现在版本控制中的皮遏制变量，如密钥和数据库URI连接密码等。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/</td>
+<td>这个包里包含了你的应用</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/__init__.py</td>
+<td>这个文件初始化你的应用并把所有其它的组件组合在</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/views.py</td>
+<td>这里定义了路由。它也许需要作为一个包(yourapp/views/)，由一些包含了紧密联系的路由的模块组成。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/models.py</td>
+<td>这里定义了应用的模型。你可能需要像对待views.py一样把它分割成许多模块，作为一个包。</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/static/</td>
+<td>这里包含了公共CSS, Javascript, images等</td>
+<td></td>
+</tr>
+<tr>
+<td>yourapp/templates/</td>
+<td>这里放置你的应用的Jinja2模板。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-配置"><a href="#2-配置" class="headerlink" title="2. 配置"></a>2. 配置</h3><p>大多数的配置变量都可以包含在config.py中，然后在yourapp/__init__.py中加载它。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">app.config.from_object(<span class="string">'config'</span>)</div></pre></td></tr></table></figure>
+<p>对于一些不能为人所知的配置变量，比如API密钥或者数据库密钥等，我们要把它们从config.py中分离出来，并保持在版本控制之外。flask提供了一个instance文件夹，我们可以把这些配置放在instance文件夹下的config文件中，并且在yourapp/__init__.py中加载它。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">app = Flask(__name__, instance_relative_config=<span class="keyword">True</span>)</div><div class="line">app.config.from_object(<span class="string">'config'</span>)</div><div class="line">app.config.from_pyfile(<span class="string">'config.py'</span>)</div></pre></td></tr></table></figure>
+<p>同时注意要将instance文件夹保持在版本控制之外。</p>
+<p>如果你有关于多个环境的配置，可以通过将这些配置放入多个文件中，然后根据环境变量选择要加载的配置文件。它看起来应该时这个样子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">config/</div><div class="line">  __init__.py # 空的，只是用来告诉Python它是一个包。</div><div class="line">  default.py</div><div class="line">  production.py</div><div class="line">  development.py</div><div class="line">  staging.py</div></pre></td></tr></table></figure>
+<p>要在不同的环境中制定所需的变量，你可以调用<code>app.config.from_envvar(&#39;APP_CONFIG_FILE&#39;)</code>,它将加载环境变量APP_CONFIG_FILE指定的文件。在Linux系统中，你可以使用一个she’ll脚本来设置环境变量。</p>
+<p>start.sh</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">APP_CONFIG_FILE=/var/www/yourapp/config/production.py</div></pre></td></tr></table></figure>
+<p>运行<code>source start.sh</code>命令就可以设置环境变量。</p>
+<h3 id="3-使用SQLAlchemy管理数据库"><a href="#3-使用SQLAlchemy管理数据库" class="headerlink" title="3. 使用SQLAlchemy管理数据库"></a>3. 使用SQLAlchemy管理数据库</h3><p>在flask中可以使用SQLAlchemy方便的管理postgresql、MySQL、SQLite等关系型数据库。</p>
+<h4 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pip install Flask-SQLAlchemy Flask-Migrate psycopg2</div></pre></td></tr></table></figure>
+<h4 id="配置数据库URI"><a href="#配置数据库URI" class="headerlink" title="配置数据库URI"></a>配置数据库URI</h4><p>在配置文件instance/config.py中添加配置变量：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">SQLALCHEMY_DATABASE_URI = &quot;postgresql://user:passwrod@localhost/database&quot;</div></pre></td></tr></table></figure>
+<h4 id="在应用中注册数据库"><a href="#在应用中注册数据库" class="headerlink" title="在应用中注册数据库"></a>在应用中注册数据库</h4><p>我们需要在应用中引入SQLAlchemy并连接到数据库</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment">## yourapp/__init__.py</span></div><div class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</div><div class="line"><span class="keyword">from</span> flask_sqlalchemy <span class="keyword">import</span> SQLAlchemy</div><div class="line"></div><div class="line">app = Flask(__name__, instance_relative_config=<span class="keyword">True</span>)</div><div class="line">app.config.from_object(<span class="string">'config'</span>)</div><div class="line">app.config.from_pyfile(<span class="string">'config.py'</span>)</div><div class="line">app.config.from_envvar(<span class="string">'APP_CONFIG_FILE'</span>)</div><div class="line">db = SQLA;chemy(app)</div><div class="line"></div><div class="line"><span class="keyword">from</span> .models <span class="keyword">import</span> Result</div></pre></td></tr></table></figure>
+<h4 id="建立数据模型"><a href="#建立数据模型" class="headerlink" title="建立数据模型"></a>建立数据模型</h4><p>在models.py中定义我们要使用的数据模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> app <span class="keyword">import</span> db</div><div class="line"><span class="keyword">from</span> sqlalchemy.dialects.postgresql <span class="keyword">import</span> JSON</div><div class="line"></div><div class="line"></div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Result</span><span class="params">(db.Model)</span>:</span></div><div class="line">    __tablename__ = <span class="string">'results'</span></div><div class="line"></div><div class="line">    id = db.Column(db.Integer, primary_key=<span class="keyword">True</span>)</div><div class="line">    url = db.Column(db.String())</div><div class="line">    result_all = db.Column(JSON)</div><div class="line">    result_no_stop_words = db.Column(JSON)</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, url, result_all, result_no_stop_words)</span>:</span></div><div class="line">        self.url = url</div><div class="line">        self.result_all = result_all</div><div class="line">        self.result_no_stop_words = result_no_stop_words</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__repr__</span><span class="params">(self)</span>:</span></div><div class="line">        <span class="keyword">return</span> <span class="string">'&lt;id &#123;&#125;&gt;'</span>.format(self.id)</div></pre></td></tr></table></figure>
+<h4 id="数据库迁移"><a href="#数据库迁移" class="headerlink" title="数据库迁移"></a>数据库迁移</h4><p>数据库的模式并不是亘古不变的，很多时候你需要处在表里增加或删除字段，但又不想从头再来，丢失之前的数据。这时候就需要数据库迁移工具。Alembric（它是Flask-Migrate的一部分）是专用于SQLAlchemy的数据库迁移工具，它允许你保持你的数据库模式的版本历史，这样你就可以升级到一个新的 模式，或者降级到一个旧的模式。</p>
+<p>我们需要新建一个manage.py文件</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">from</span> flask_script <span class="keyword">import</span> Manager</div><div class="line"><span class="keyword">from</span> flask_migrate <span class="keyword">import</span> Migrate, MigrateCommand</div><div class="line"></div><div class="line"><span class="keyword">from</span> app <span class="keyword">import</span> app, db</div><div class="line"></div><div class="line"></div><div class="line">app.config.from_object(os.environ[<span class="string">'APP_SETTINGS'</span>])</div><div class="line"></div><div class="line">migrate = Migrate(app, db)</div><div class="line">manager = Manager(app)</div><div class="line"></div><div class="line">manager.add_command(<span class="string">'db'</span>, MigrateCommand)</div><div class="line"></div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</div><div class="line">    manager.run()</div></pre></td></tr></table></figure>
+<p>为了使用Flask-Migrate, 我们首先引入Manager和Migrate, 以及Migrate Command。创建一个migrate实例，并为我们的应用初始化一个Manager实例，然后将db命令添加到manager中，这样我们就可以在命令行中运行数据库迁移命令。接下来，在命令行中运行下面的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python manage.py db init</div></pre></td></tr></table></figure>
+<p>运行上面的命令后在应用的根目录下会初始化一个migrations文件夹。其下面的versions文件夹用来存放数据库的版本信息，它现在应该是空的。</p>
+<p>然后运行:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python manage.py db migrate</div></pre></td></tr></table></figure>
+<p>运行上面的命令后你会发现，versions文件夹中出现了一个文件，这个文件是Alembic基于当前的model自动生成的迁移文件。</p>
+<p>接下来，运行db upgrate命令来升级数据库：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python manage.py db upgrade</div></pre></td></tr></table></figure>
+<p>这样，查看本地数据库我们就可以发现新建立的表了。</p>
+<blockquote>
+<p><strong>注意</strong>：不要在命令行中使用db.create_all()命令来初始化数据库，这样会造成数据库的迁移出现问题。</p>
+</blockquote>
+<h3 id="4-使用Redis建立任务队列"><a href="#4-使用Redis建立任务队列" class="headerlink" title="4. 使用Redis建立任务队列"></a>4. 使用Redis建立任务队列</h3><h4 id="安装依赖-1"><a href="#安装依赖-1" class="headerlink" title="安装依赖"></a>安装依赖</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">pip install redis rq</div></pre></td></tr></table></figure>
+<h4 id="配置Worker"><a href="#配置Worker" class="headerlink" title="配置Worker"></a>配置Worker</h4><p>首先建立一个worker进程来监听任务队列。新建一个worker.py文件并加入以下代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"></div><div class="line"><span class="keyword">import</span> redis</div><div class="line"><span class="keyword">from</span> rq <span class="keyword">import</span> Worker, Queue, Connection</div><div class="line"></div><div class="line">listen = [<span class="string">'default'</span>]</div><div class="line"></div><div class="line">redis_url = os.getenv(<span class="string">'REDISTOGO_URL'</span>, <span class="string">'redis://localhost:6379'</span>)</div><div class="line"></div><div class="line">conn = redis.from_url(redis_url)</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</div><div class="line">    <span class="keyword">with</span> Connection(conn):</div><div class="line">        worker = Worker(list(map(Queue, listen)))</div><div class="line">        worker.work()</div></pre></td></tr></table></figure>
+<p>在这里，我们监听了一个名为default的队列，并且建立了到地址localhost:6379的redis服务器的连接。</p>
+<h4 id="更新应用文件"><a href="#更新应用文件" class="headerlink" title="更新应用文件"></a>更新应用文件</h4><p>修改yourapp/__init__.py文件</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</div><div class="line"><span class="keyword">from</span> flask_sqlalchemy <span class="keyword">import</span> SQLAlchemy</div><div class="line"><span class="keyword">from</span> rq <span class="keyword">import</span> Queue</div><div class="line"><span class="keyword">from</span> worker <span class="keyword">import</span> conn</div><div class="line"> </div><div class="line">app = Flask(__name__)</div><div class="line">app.config.from_object(<span class="string">'config'</span>)</div><div class="line">app.config.from_object(os.environ[<span class="string">'APP_SETTINGS'</span>])</div><div class="line">db = SQLAlchemy(app)</div><div class="line"> </div><div class="line">q = Queue(connection=conn)</div><div class="line"> </div><div class="line"><span class="keyword">from</span> . <span class="keyword">import</span> views</div></pre></td></tr></table></figure>
+<p><code>q=Queue(connection=conn)</code>建立了一个redis的连接并基于此连接初始化了一个队列。</p>
+<p>下面修改yourapp/views.py文件</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@app.route('/', methods=['GET', 'POST'])</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">index</span><span class="params">()</span>:</span></div><div class="line">    results = &#123;&#125;</div><div class="line">    <span class="keyword">if</span> request.method == <span class="string">"POST"</span>:</div><div class="line">        <span class="comment"># get url that the person has entered</span></div><div class="line">        url = request.form[<span class="string">'url'</span>]</div><div class="line">        job = q.enqueue_call(</div><div class="line">            func=count_and_save_words, args=(url,), result_ttl=<span class="number">5000</span></div><div class="line">        )</div><div class="line">        print(job.get_id())</div><div class="line"></div><div class="line">    <span class="keyword">return</span> render_template(<span class="string">'index.html'</span>, results=results)</div></pre></td></tr></table></figure>
+<p>注意这几行代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">job = q.enqueue_call(</div><div class="line">    func=count_and_save_words, args=(url,), result_ttl=<span class="number">5000</span></div><div class="line">)</div><div class="line">print(job.get_id())</div></pre></td></tr></table></figure>
+<p>在这里我们使用了之前初始化的队列q，调用enqueue_call函数向队列中添加一个新任务，这个任务运行count_and_save_words的功能，参数时url。同时参数result_ttl=5000告诉RQ将任务的结果保持5000秒。</p>
+<p>接下来，增加下面的代码来查看任务运行的结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@app.route("/results/&lt;job_key&gt;", methods=['GET'])</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_results</span><span class="params">(job_key)</span>:</span></div><div class="line"></div><div class="line">    job = Job.fetch(job_key, connection=conn)</div><div class="line"></div><div class="line">    <span class="keyword">if</span> job.is_finished:</div><div class="line">        result = Result.query.filter_by(id=job.result).first()</div><div class="line">        results = sorted(</div><div class="line">            result.result_no_stop_words.items(),</div><div class="line">            key=operator.itemgetter(<span class="number">1</span>),</div><div class="line">            reverse=<span class="keyword">True</span></div><div class="line">        )[:<span class="number">10</span>]</div><div class="line">        <span class="keyword">return</span> jsonify(results)</div><div class="line">    <span class="keyword">else</span>:</div><div class="line">        <span class="keyword">return</span> <span class="string">"Nay!"</span>, <span class="number">202</span></div></pre></td></tr></table></figure>
+<p>这样，在浏览器中输入<a href="http://localhost:5000/results/" target="_blank" rel="external">http://localhost:5000/results/</a><job_id>就可以查看对应任务的结果。</job_id></p>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><ol>
+<li><a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/" target="_blank" rel="external">Flask-by-Example</a></li>
+<li><a href="https://spacewander.github.io/explore-flask-zh/index.html" target="_blank" rel="external">Flask之旅</a></li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;最近开始学习使用flask框架进行web应用开发，在网上发现了一个很好的系列教程&lt;a href=&quot;https://realpython.com/blog/python/flask-by-example-part-1-project-setup/&quot;&gt;Flask-by-Example&lt;/a&gt;。这个教程共包含八个部分，详细讲解了环境安装、项目组织、数据库连接、使用redis建立任务队列以及使用AngularJS进行前后端的数据交互、使用D3进行数据可视化的完整步骤。下面是我跟随上面的教程进行Flask开发的具体过程以及自己总结的一些经验。我的完整源码请参照&lt;a href=&quot;https://github.com/plWang/wordcount&quot;&gt;https://github.com/plWang/wordcount&lt;/a&gt;&lt;/p&gt;
+    
+    </summary>
+    
+      <category term="python" scheme="https://plWang.github.io/categories/python/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/categories/python/web%E5%BC%80%E5%8F%91/"/>
+    
+    
+      <category term="flask" scheme="https://plWang.github.io/tags/flask/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/tags/web%E5%BC%80%E5%8F%91/"/>
+    
+      <category term="redis" scheme="https://plWang.github.io/tags/redis/"/>
+    
+      <category term="SQLAlchemy" scheme="https://plWang.github.io/tags/SQLAlchemy/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>使用Apache+mog_wsgi部署Flask应用</title>
+    <link href="https://plWang.github.io/2016/10/21/DeployFlaskUsingApache/"/>
+    <id>https://plWang.github.io/2016/10/21/DeployFlaskUsingApache/</id>
+    <published>2016-10-21T12:15:13.000Z</published>
+    <updated>2016-11-03T08:26:58.335Z</updated>
+    
+    <content type="html"><![CDATA[<p>之前开始学习flask框架，试着用flask写了一个小的web应用，想要把它部署在服务器上。查了很多资料，也遇到了不少坑，所以想把自己部署的过程记录一下。</p>
+<p>Flask应用可以采用多种方式部署。官方推荐了几种方式：</p>
+<ul>
+<li>Apache + mod_wsgi</li>
+<li>Nginx + Gunicorn</li>
+<li>uwsgi</li>
+</ul>
+<p>因为我的服务器上之前部署了apache，所以我采用了第一种Apache+mod_wsgi的方式来部署我的flask应用。<br><a id="more"></a><br>首先看一下我的应用的结构</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">flaskr/</div><div class="line">├── config.py</div><div class="line">├── flaskr</div><div class="line">│   ├── __init__.py</div><div class="line">│   ├── models.py</div><div class="line">│   ├── static/</div><div class="line">│   ├── templates/</div><div class="line">│   ├── views.py</div><div class="line">├── flaskr.wsgi</div><div class="line">├── instance</div><div class="line">│   └── config.py</div><div class="line">├── requirements.txt</div><div class="line">└── run.py</div></pre></td></tr></table></figure>
+<p>app定义在/flaskr/<strong>init</strong>.py中。我的应用路径在/var/www/flaskr/下。</p>
+<h3 id="1-安装apache及mod-wsgi"><a href="#1-安装apache及mod-wsgi" class="headerlink" title="1. 安装apache及mod_wsgi"></a>1. 安装apache及mod_wsgi</h3><p>Apache的安装步骤在这里不做介绍了，如果没有安装的话可以参考我之前的文章</p>
+<p><a href="https://plwang.github.io/2016/10/14/ubuntu%20LAMP%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/">ubuntu LAMP环境搭建</a>。</p>
+<p>在ubuntu下，可以直接通过apt-get安装mod_wsgi</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install libapache2-mod-wsgi</div></pre></td></tr></table></figure>
+<h3 id="2-创建wsgi文件"><a href="#2-创建wsgi文件" class="headerlink" title="2.  创建wsgi文件"></a>2.  创建wsgi文件</h3><p>创建一个.wsgi文件，这个文件包含mod_wsgi启动时需要执行的获取应用程序对象的代码。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cd /path/to/your/app</div><div class="line">vim flaskr.wsgi</div></pre></td></tr></table></figure>
+<p>文件的内容如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment">##Virtualenv Settings</span></div><div class="line">activate_this = <span class="string">'/home/ted/Env/venv/activate_this.py'</span></div><div class="line">execfile(activate_this, dict(__file__=activate_this))</div><div class="line"></div><div class="line"><span class="comment">##Replace the standard out</span></div><div class="line">sys.stdout = sys.stderr</div><div class="line"></div><div class="line"><span class="comment">##Add this file path to sys.path in order to import settings</span></div><div class="line">sys.path.insert(<span class="number">0</span>, os.path.join(os.path.dirname(os.path.realpath(__file__)), <span class="string">'../..'</span>))</div><div class="line"></div><div class="line"><span class="comment">##Add this file path to sys.path in order to import app</span></div><div class="line">sys.path.append(<span class="string">'/var/www/flaskr/'</span>)</div><div class="line"></div><div class="line"><span class="comment">##Create appilcation for our app</span></div><div class="line"><span class="keyword">from</span> flaskr <span class="keyword">import</span> app <span class="keyword">as</span> application</div></pre></td></tr></table></figure>
+<p>文件的头两行设定了虚拟环境的加载路径。我使用了virtualenvwrapper来进行虚拟环境的管理，如果你使用virtaulenv建立虚拟环境，路径可能和我的不同，应该是类似｀/path/toyour/app/venv/bin/activate_this.py｀的形式。</p>
+<p>倒数第二行把应用的路径加入到系统搜索路径中。</p>
+<p>最后一行引入了应用程序对象。我是在flaskr/__init__.py中定义了app对象，如果你是在run.py或其他文件中定义了app，那么应该用下面的形式引入</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> flaskr.run <span class="keyword">import</span> app <span class="keyword">as</span> application</div></pre></td></tr></table></figure>
+<h3 id="3-配置Apache"><a href="#3-配置Apache" class="headerlink" title="3. 配置Apache"></a>3. 配置Apache</h3><p>我们需要为自己的应用程序建立一个apache配置文件。该配置文件放在<code>/etc/apache2/sites-enabled/</code>目录下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">cd /etc/apache2/sites-enabled</div><div class="line">sudo vim flaskr.conf</div></pre></td></tr></table></figure>
+<p>文件内容如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">WSGIScriptAlias / /var/www/flaskr/flaskr.wsgi</div><div class="line">WSGIScriptReloading On</div><div class="line"> </div><div class="line">&lt;Directory /var/www/flaskr&gt;</div><div class="line">  Order allow,deny</div><div class="line">  Allow from all</div><div class="line">&lt;/Directory&gt;</div></pre></td></tr></table></figure>
+<p>另外，还需要查看<code>\etc\apache2/apache2.conf</code>，确保文件中包含下面的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">#Include generic snippets of statements. </div><div class="line">#Following line should be there</div><div class="line">IncludeOptional conf-enabled/*.conf</div></pre></td></tr></table></figure>
+<h3 id="4-重启Apache"><a href="#4-重启Apache" class="headerlink" title="4. 重启Apache"></a>4. 重启Apache</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo service apache2 restart</div></pre></td></tr></table></figure>
+<p>经过上面的步骤，我们的flask应用就部署好了。最后，打开浏览器，输入本机的ip地址，就可以看到网页了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前开始学习flask框架，试着用flask写了一个小的web应用，想要把它部署在服务器上。查了很多资料，也遇到了不少坑，所以想把自己部署的过程记录一下。&lt;/p&gt;
+&lt;p&gt;Flask应用可以采用多种方式部署。官方推荐了几种方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Apache + mod_wsgi&lt;/li&gt;
+&lt;li&gt;Nginx + Gunicorn&lt;/li&gt;
+&lt;li&gt;uwsgi&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;因为我的服务器上之前部署了apache，所以我采用了第一种Apache+mod_wsgi的方式来部署我的flask应用。&lt;br&gt;
+    
+    </summary>
+    
+      <category term="python" scheme="https://plWang.github.io/categories/python/"/>
+    
+      <category term="web开发" scheme="https://plWang.github.io/categories/python/web%E5%BC%80%E5%8F%91/"/>
+    
+    
+      <category term="环境搭建" scheme="https://plWang.github.io/tags/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
+    
+      <category term="flask" scheme="https://plWang.github.io/tags/flask/"/>
+    
+      <category term="web" scheme="https://plWang.github.io/tags/web/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>mysql中文乱码问题解决</title>
+    <link href="https://plWang.github.io/2016/10/18/mysql%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3/"/>
+    <id>https://plWang.github.io/2016/10/18/mysql中文乱码问题解决/</id>
+    <published>2016-10-18T03:36:00.000Z</published>
+    <updated>2016-10-20T14:01:34.538Z</updated>
+    
+    <content type="html"><![CDATA[<p>MySQL使用过程中常常会遇到插入中文错误（或提示Data too long错误等）中文乱码的问题，采用下面的方法基本上可以避免中文乱码问题。<br><a id="more"></a></p>
+<ol>
+<li>建立数据库时</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">CREATE</span> <span class="keyword">DATABASE</span> <span class="string">`test`</span>  </div><div class="line"><span class="built_in">CHARACTER</span> <span class="keyword">SET</span> <span class="string">'utf8'</span>  </div><div class="line"><span class="keyword">COLLATE</span> <span class="string">'utf8_general_ci'</span>;</div></pre></td></tr></table></figure>
+<ol>
+<li>建立表时</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`database_user`</span> (  </div><div class="line"><span class="string">`ID`</span> <span class="built_in">varchar</span>(<span class="number">40</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">default</span> <span class="string">''</span>,  </div><div class="line"><span class="string">`UserID`</span> <span class="built_in">varchar</span>(<span class="number">40</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">default</span> <span class="string">''</span>,  </div><div class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8;</div></pre></td></tr></table></figure>
+<p>在建立数据库和建立表时采用相同的utf8编码，基本上就可以避免大部分中文编码问题。</p>
+<p>你还可以通过下面的命令查看和修改默认的编码格式。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">mysql&gt; show variables like "%char%";  </div><div class="line">+--------------------------+---------------+  </div><div class="line">| Variable_name | Value |  </div><div class="line">+--------------------------+---------------+  </div><div class="line">| character_set_client | gbk |  </div><div class="line">| character_set_connection | gbk |  </div><div class="line">| character_set_database | utf8 |  </div><div class="line">| character_set_filesystem | binary |  </div><div class="line">| character_set_results | gbk |  </div><div class="line">| character_set_server | utf8 |  </div><div class="line">| character_set_system | utf8 |  </div><div class="line">+--------------------------+-------------+</div></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">set</span> <span class="keyword">names</span> utf8</div></pre></td></tr></table></figure>
+<p>其效果等同于</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">SET</span> character_set_client=<span class="string">'utf8'</span>;  </div><div class="line"><span class="keyword">SET</span> character_set_connection=<span class="string">'utf8'</span>;  </div><div class="line"><span class="keyword">SET</span> character_set_results=<span class="string">'utf8'</span>;</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;MySQL使用过程中常常会遇到插入中文错误（或提示Data too long错误等）中文乱码的问题，采用下面的方法基本上可以避免中文乱码问题。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="环境配置" scheme="https://plWang.github.io/tags/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"/>
+    
+      <category term="mysql" scheme="https://plWang.github.io/tags/mysql/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>ubuntu LAMP环境搭建</title>
+    <link href="https://plWang.github.io/2016/10/14/ubuntu%20LAMP%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
+    <id>https://plWang.github.io/2016/10/14/ubuntu LAMP环境搭建/</id>
+    <published>2016-10-14T03:50:00.000Z</published>
+    <updated>2016-10-21T06:03:51.498Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="1-安装msyql"><a href="#1-安装msyql" class="headerlink" title="1. 安装msyql"></a>1. 安装msyql</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get update</div></pre></td></tr></table></figure>
+<p>安装mysql-server和mysql-client</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install mysql-server mysql-client</div></pre></td></tr></table></figure>
+<p>安装过程中需要设置mysql的root密码<br><a id="more"></a></p>
+<h2 id="2-安装并配置php"><a href="#2-安装并配置php" class="headerlink" title="2. 安装并配置php"></a>2. 安装并配置php</h2><p>   由于要使用Nginx，所以这里选择安装带fpm版本的php</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install php5-fpm</div></pre></td></tr></table></figure>
+<p>   按需安装相应的php模块，这里选择通用的模块列表</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install php5-mysql php5-curl php5-gd php5-intl php-pear php5-imagick php5-imap php5-mcrypt php5-memcache php5-ming php5-ps php5-pspell php5-snmp php5-sqlite php5-tidy php5-xmlrpc php5-xsl</div></pre></td></tr></table></figure>
+<p>   安装完成后，配置php-fpm，配置中出现的ubuntu为登录用户</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">vi /etc/php5/fpm/pool.d/www.conf</div></pre></td></tr></table></figure>
+<p>   修改或新增一下几项</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">user = ubuntu</div><div class="line">group = ubuntu</div><div class="line">listen.owner = ubuntu</div><div class="line">listen.group = ubuntu</div><div class="line">listen.mode = 0660</div></pre></td></tr></table></figure>
+<p>   将/var/run/php5-frm.sock所属用户及用户组改为ubuntu，否则会提示权限问题。</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">chown ubuntu:ubuntu /var/run/php5-frm.sock</div><div class="line">chown 0660 /var/run/php5-fpm.sock</div></pre></td></tr></table></figure>
+<p>   继续修改如下文件</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">vi /etc/php5/fpm/php/ini</div></pre></td></tr></table></figure>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">short_open_tag = On</div><div class="line">cgi.fix_pathinfo = 0</div></pre></td></tr></table></figure>
+<p>   重启php5-fpm</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">/etc/init.d/php5-fpm restart</div></pre></td></tr></table></figure>
+<p>   完成上述操作后，在终端中输入<code>php -v</code></p>
+<p>   如果正常显示版本信息，则安装配置成功。</p>
+<p>   我在安装时没有正常显示版本信息，报出如下错误：</p>
+   <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskAvail ::= &#123; dskEntry 7 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskTotal ::= &#123; dskEntry 6 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskMinPercent ::= &#123; dskEntry 5 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskMinimum ::= &#123; dskEntry 4 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskDevice ::= &#123; dskEntry 3 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskPath ::= &#123; dskEntry 2 &#125;</div><div class="line">Cannot adopt OID in UCD-SNMP-MIB: dskIndex ::= &#123; dskEntry 1 &#125;</div><div class="line">Cannot adopt OID in UCD-DISKIO-MIB: diskIOTable ::= &#123; ucdDiskIOMIB 1 &#125;</div><div class="line">Cannot adopt OID in NET-SNMP-AGENT-MIB: nsLoggingGroup ::= &#123; nsConfigGroups 2 &#125;</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>   google一下得知应该是php配置的问题，执行下面的操作后问题解决：</p>
+<p>   <code>sudo apt-get remove php5-snmp</code>或者<code>sudo apt-get install snmp</code></p>
+<p>   ​</p>
+<h2 id="3-安装并配置apache2"><a href="#3-安装并配置apache2" class="headerlink" title="3. 安装并配置apache2"></a>3. 安装并配置apache2</h2><p>通过apt-get命令安装apache2 <code>sudo apt-get install apache2</code></p>
+<p>修改apache2配置文件<code>vi /etc/apache2/apache2.conf</code></p>
+<p>完成后启动<code>\etc\init.d\apache2 start</code></p>
+<p>启动apache2服务后测试配置是否正确，在浏览器中输入本机ip</p>
+<p>如果显示welcome apache界面，说明apache2安装配置成功。</p>
+<h2 id="4-安装并配置phpmyadmin"><a href="#4-安装并配置phpmyadmin" class="headerlink" title="4. 安装并配置phpmyadmin"></a>4. 安装并配置phpmyadmin</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">sudo apt-get install phpmyadmin</div></pre></td></tr></table></figure>
+<p>安装过程中，需要选择网络服务程序，选择第一项apache2即可，另外还需要输入mysql的用户名和密码。</p>
+<p>安装完成后，phpmyadmin被安装在/usr/share/目录下，我们在/var/www/html/目录下建立软链接，指向phpmyadmin的安装目录。执行以下命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin</div></pre></td></tr></table></figure>
+<p>这样，在/var/www/html/目录下就出现了名为phpmyadmin的软链接，指向phpmyadmin的安装目录。</p>
+<p>安装完成后，在浏览器中打开本机ip，会看到phpmyadmin的链接，点击后输入用户名和密码就可以查看数据库了。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;1-安装msyql&quot;&gt;&lt;a href=&quot;#1-安装msyql&quot; class=&quot;headerlink&quot; title=&quot;1. 安装msyql&quot;&gt;&lt;/a&gt;1. 安装msyql&lt;/h2&gt;&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;sudo apt-get update&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;安装mysql-server和mysql-client&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;sudo apt-get install mysql-server mysql-client&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;p&gt;安装过程中需要设置mysql的root密码&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="环境搭建" scheme="https://plWang.github.io/tags/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
+    
+      <category term="web服务" scheme="https://plWang.github.io/tags/web%E6%9C%8D%E5%8A%A1/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hough Transform原理</title>
+    <link href="https://plWang.github.io/2016/09/28/Hough%20Transform/"/>
+    <id>https://plWang.github.io/2016/09/28/Hough Transform/</id>
+    <published>2016-09-28T13:00:00.000Z</published>
+    <updated>2016-12-05T07:34:17.495Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="1-基本Hough变换"><a href="#1-基本Hough变换" class="headerlink" title="1. 基本Hough变换"></a>1. 基本Hough变换</h3><h4 id="1-Lines"><a href="#1-Lines" class="headerlink" title="1)  Lines"></a>1)  Lines</h4><ol>
+<li><p>笛卡尔坐标表示</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLine.png" alt="HoughLine"></p>
+</li>
+</ol>
+<p>$$<br>\begin{align}<br>y=mx+c\ \ or\ \ Ax+By+1=0<br>\end{align}<br>$$<br><a id="more"></a><br>   xy空间中的一条直线对应Hough空间的一个点(A,B)</p>
+<ol>
+<li><p>极坐标表示</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLinePolar.png" alt="HoughLinePolar"></p>
+</li>
+</ol>
+<p>$$<br>c=\frac{\rho}{sin(\theta)}\ \ \ m=-\frac{1}{tan(\theta)}<br>$$</p>
+<p>   代入公式1中，可得<br>$$<br>\rho=xcos(\theta)+ysin(\theta)<br>$$</p>
+<h4 id="2-Circles"><a href="#2-Circles" class="headerlink" title="2) Circles"></a>2) Circles</h4><p>$$<br>(x-x_0)^2+(y-y_0)^2=r^2<br>$$</p>
+<p>上述公式可以表示成参数形式<br>$$<br>x_0=x-rcos(\theta)\\<br>y_0=y-rsin(\theta)<br>$$<br>注意，上面公式中的$\theta$不是自由变量，但是定义了曲线的轨迹。</p>
+<h4 id="3-Ellipse"><a href="#3-Ellipse" class="headerlink" title="3) Ellipse"></a>3) Ellipse</h4><p>我们定义一个圆到椭圆的映射<br>$$<br>\begin{bmatrix}x\\y\end{bmatrix}=<br>\begin{bmatrix}cos(\rho) &amp; sin(\rho)\\ -sin(\rho)&amp;cos(\rho)\end{bmatrix}<br>\begin{bmatrix}S_x\\S_y\end{bmatrix}<br>\begin{bmatrix}x’\\y’\end{bmatrix} +<br>\begin{bmatrix}t_x\\t_y\end{bmatrix}<br>$$<br>其中\$\rho$表示方向，$(S_x,S_y)$表示尺度因子，$(t_x,t_y)$表示平移。</p>
+<p>如果我们定义<br>$$<br>a_0=t_x\ \ a_x=S_xcos(\rho)\ \ b_x=S_ysin(\rho)\\<br>b_0=t_y\ \ a_y=-S_xsin(\rho)\ \ b_y=S_ycos(\rho)<br>$$</p>
+<p>那么我们可以将椭圆方程变换为<br>$$<br>x=a_0+a_xcos(\theta)+b_xsin(\theta)\\<br>y=b_0+a_ycos(\theta)+b_ysin(\theta)<br>$$<br>上面的极坐标表示形式用$(a_0,b_0,a_x,b_x,a_y,b_y)$六个参数定义一个椭圆，其中$\theta$不是一个自由变量。</p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HTEllipse.png" alt="HTEllipse"></p>
+<h3 id="2-参数空间分解"><a href="#2-参数空间分解" class="headerlink" title="2. 参数空间分解"></a>2. 参数空间分解</h3><h4 id="1-lines"><a href="#1-lines" class="headerlink" title="1) lines"></a>1) lines</h4><p>对于直线来说，考虑到我们可以通过图像中的信息计算出斜率，因此累积空间可以由二维降为一维。计算斜率有两种方法：</p>
+<ul>
+<li>使用图像中点的梯度方向，$m=\phi$</li>
+<li>通过图像中的一对点计算，$m=\frac{y_2-y_1}{x_2-x_1}$</li>
+</ul>
+<p>因此，直线的极坐标表示中其中一个参数$\theta$就可以计算出来</p>
+<p>$$<br>\theta=-tan^{-1}\left(\frac{1}{\phi}\right)\ \ or\ \ \theta=tan^{-1}\left(\frac{x_1-x_2}{y_2-y_1}\right)<br>$$</p>
+<h4 id="2-circles"><a href="#2-circles" class="headerlink" title="2) circles"></a>2) circles</h4><p>$$<br>v(\theta)=x(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$</p>
+<p>其中，<br>$$<br>x(\theta)=x_0+rcos(\theta)\ \ \ y(\theta)=y_0+rsin(\theta)<br>$$</p>
+<p>考虑它的一阶导和二阶导<br>$$<br>v’(\theta)=x’(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y’(\theta)\begin{bmatrix}0\\1\end{bmatrix}\\<br>v’’(\theta)=x’’(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y’’(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$<br>其中，<br>$$<br>x’(\theta)=-rsin(\theta)\ \ \ y’(\theta)=rcos(\theta)\\<br>x’’(\theta)=-rcos(\theta)\ \ \ y’’(\theta)=-rsin(\theta)<br>$$<br> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_derivative.png" alt="circles_derivative"></p>
+<p>根据上图的几何关系，可得到</p>
+<p>$$<br>\phi’’(\theta)=\frac{y’’(\theta)}{x(\theta)}=\frac{y(\theta)-y_0}{x(\theta)-x_0}<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x(\theta)-x_0)+y(\theta)<br>$$</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_geometry.png" alt="circles_geometry"></p>
+<p>$\phi’’(\theta)$可以通过$\phi’’(\theta)$与$\phi’(\theta)$的关系计算<br>$$<br>\phi’’(\theta)=-\frac{1}{\phi’(\theta)}<br>$$<br>而$\phi’(\theta)$可以通过两种方式计算</p>
+<ul>
+<li>梯度</li>
+<li>圆上的一对点</li>
+</ul>
+<p>$$<br>\phi’(\theta)=\frac{y_2-y_1}{x_2-x_1}<br>$$</p>
+<p>$$<br>x_m=\frac{1}{2}(x_1+x_2)\ \ \ y_m=\frac{1}{2}(y_1+y_2)<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x_m-x_0)+y_m<br>$$</p>
+<h4 id="3-Ellipse-1"><a href="#3-Ellipse-1" class="headerlink" title="3) Ellipse"></a>3) Ellipse</h4><p>$$<br>x(\theta)=a_0+a_xcos(\theta)+b_xsin(\theta)\ \ \ y(\theta)=b_0+a_ycos(\theta)+b_ysin(\theta)\\<br>x’(\theta)=-a_xsin(\theta)+b_xcos(\theta)\ \ \ y’(\theta)=-a_ysin(\theta)+b_ycos(\theta)\\<br>x’’(\theta)=-a_xcos(\theta)-b_xsin(\theta)\ \ \ y’’(\theta)=-a_ycos(\theta)-b_ysin(\theta)<br>$$</p>
+<p>一阶导数和二阶导数的角度的tangent值为<br>$$<br>\phi’(\theta)=\frac{y’(\theta)}{x’(\theta))}\\<br>\phi’’(\theta)=\frac{y’’(\theta)}{x’’(\theta))}<br>$$<br>与圆中类似，对于椭圆我们仍然有下面的关系<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\phi’’(\theta)<br>$$<br>然而，在椭圆中$\phi’(\theta)$和$\phi’’(\theta)$并不正交，因此，这使得$\phi’’(\theta)$的计算更加复杂。为了计算$\phi’’(\theta)$，我们使用椭圆上</p>
+<p>的两个点，他们的连线的斜率为$\phi’(\theta)$。上面公式定义的直线经过这两个点的中点$(x_m,y_m)$</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/eliipse_geomrtry.png" alt="eliipse_geomrtry"><br>$$<br>x_1=a_xcos(\theta_1)\ \ \ x_2=a_xcos(\theta_2)\ \ \ x(\theta)=a_xcos(\theta)\\<br>y_1=b_ysin(\theta_1)\ \ \ y_2=b_ysin(\theta_2)\ \ \ y(\theta)=b_ysin(\theta)<br>$$<br>点$(x(\theta),y(\theta))$是直线与椭圆的交点，所以有<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\frac{a_x}{b_y}.\frac{y_m}{x_m}<br>$$</p>
+<p>$$<br>\phi’’(\theta)=\frac{b_y}{a_x}tan(\theta)\\\\<br>\phi’’(\theta)=\frac{y_m}{x_m}<br>$$</p>
+<p>上式只在椭圆没有平移时成立，有平移时满足下面的公式<br>$$<br>\phi’’(\theta)=\frac{y_T-y_m}{x_T-x_m}<br>$$<br>其中$(x_T,y_T)$是两点$(x_1,y_1),(x_2,y_2)$的切线的交点。<br>$$<br>\phi’’(\theta)=\frac{AC+2BD}{2A+BC}<br>$$<br>其中<br>$$<br>A=y_1-y_2\ \ \ B=x_1-x_2\\<br>C=\phi_1-\phi_2\ \ \ D=\phi_1\phi_2<br>$$</p>
+<h3 id="3-广义霍夫变换"><a href="#3-广义霍夫变换" class="headerlink" title="3. 广义霍夫变换"></a>3. 广义霍夫变换</h3><p> 通过将上面表示形状的公式进行推导，我们就可以讲霍夫便函推广到可以检测任意形状。<br>$$<br>v(\theta)=x(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$<br>我们可以使用与椭圆类似的方法来定义图形的形状。<br>$$<br>\omega(\theta)=b+\lambda R(\rho)v(\theta)<br>$$<br>其中，b表示平移，$\lambda$表示尺度因子，$R(\rho)$表示旋转因子。因此，图形的位置可以用下式表示<br>$$<br>b=\omega(\theta)-\lambda R(\rho)v(\theta)<br>$$<br>给定一个图形的形状$\omega(\theta)$和一组参数$\lambda, \rho$，我们就可以定义图形的位置。然而，由于图形的形状依赖于我们要寻找的参数，因此我们没办法获得图形的形状。但是，对于图形的上面的点我们能够获取到，即<br>$$<br>b=\omega_i-\lambda R(\rho)v(\theta)<br>$$<br>对于图形上的所有点，我们能获得形如上式的一系列方程。在GHT中，我们假定这一系列离散的点就表示了图形的形状。这样，通过上面的方程我们就能够gather evidence。在GHT的gathering evidence过程中，我们基于梯度方向信息对匹配点进行的限制。</p>
+<p>广义霍夫变换之所以能处理任意形状的图形并不是找到了可以表示任意图形的方程，而是使用表的方式来（离散地）描述一种图形，把图形边缘点坐标保存在一张表（RTable）中，那么该图形就是确定的了。</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_GHT.png" alt="GHT"></p>
+<p>Rtable列出了边界点上所有点的角度和其与参考点构成的向量的对应关系。</p>
+<p>计算Rtable的步骤如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">1. 计算参考点</div><div class="line">遍历模型中所有边缘点</div><div class="line">2. 计算边缘点的梯度角度</div><div class="line">3. 计算边缘点与参考点构成的向量</div><div class="line">4. 按照梯度角度的对应关系存储在rtable中</div></pre></td></tr></table></figure>
+<p>GHT的过程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">1. 使用边缘检测算法计算图像中的所有边缘点和其梯度方向。</div><div class="line">遍历所有边缘点</div><div class="line">2. 按照梯度方向在rtable中查找对应行</div><div class="line">3. 对对应行中的所有向量，与当前边缘点做差得出参考点坐标，同时在累积空间中进行累加。</div><div class="line">4. 在累积空间中累积高度高的点则为匹配图形的中心。</div><div class="line">5. 通过GHT反变换计算图形中心所对应的图形边缘点坐标</div></pre></td></tr></table></figure>
+<p>广义霍夫变换的精妙之处在于为参数增加了两个关联，使得有平移和旋转（无缩放）的情况只需遍历一个参数，总共三个参数分别是图形的中心坐标（横纵）、旋转角度。如果加上缩放则为四个参数，这也只是和霍夫检测圆的规模一样而已。</p>
+<h3 id="4-Invariant-Generalized-Hough-Transform"><a href="#4-Invariant-Generalized-Hough-Transform" class="headerlink" title="4. Invariant Generalized Hough Transform"></a>4. Invariant Generalized Hough Transform</h3><p>广义霍夫变换中通过梯度方向来将图形边缘点与模板进行匹配。然而平移和缩放的同时边缘点的梯度方向也会发生改变，因此我们需要遍历旋转和缩放来进行完全匹配。为了降低计算复杂度，我们可以考虑使用一种不受旋转和缩放影响的特性（Invariant feature）来替换梯度。这样我们就只需要一个二维的累积空间就可以定位图形了。</p>
+<p>加入下列约束<br>$$<br>Q(\omega_i)=Q(v(\theta))<br>$$<br>其中，函数Q是计算一个点的特性，并且具有不变性。这种特性可以是颜色，或者任何其他在模型和图像中不会发生变化的特性。最普遍的不变特性可以考虑几何特征。</p>
+<p>在这里，我们可以考虑一个角。通过把每个边缘点$\omega_i$与两个点${\omega_j,\omega_T}$组合，我们可以得到一个角，它能够通过以下计算得到，并且不随尺度和旋转二改变。<br>$$<br>Q(\omega_i)=\frac{X_jY_i-X_iY_j}{X_iX_j+Y_iY_j}<br>$$<br>其中，$X_k=\omega_k-\omega_T,\ Y_k=\omega_k-\omega_T$</p>
+<p>按照下图中表示的几何关系，角$\beta$可以通过上面的公式计算得到，用对应的点和其梯度来表示就是<br>$$<br>Q(\omega_i)=\frac{\phi’_i-\phi’_j}{1+\phi’_i\phi’_j}<br>$$<br>我们可以将广义霍夫变换Rtable中的梯度角度替换为$\beta$。新的Rtable形式如下图所示。</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_IGHT.png" alt="IGHT"></p>
+<p>尽管角度$\beta$不跟随缩放和旋转变化，但是向量$\gamma(\lambda,\rho)$却会跟随缩放和旋转发生变化。因此，为了得到一个不变的方程，我们必须更改位置向量的定义。</p>
+<p>与圆和椭圆类似，我们可以通过经过中心点的直线的投票来确定中心点的位置，这条线由它的斜率$\phi’’$确定。</p>
+<p>通过一些几何推导（此处省略），我们可以得到<br>$$<br>\hat{\phi’’}=k+\hat{\phi’}<br>$$<br>其中，k可以通过预先计算储存在RTable中。那么投票直线的方程可以表示为<br>$$<br>y_0=\phi’’(x_0-\omega_{xi})+\omega_{yi}<br>$$<br>建立Rtable的过程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">1. 计算参考点坐标</div><div class="line">遍历模型中所有边缘点</div><div class="line">2. 计算边缘点的不变角beta</div><div class="line">3. 计算边缘点对应的角度k值</div><div class="line">4 按照不变角beta的对应关系，将其k值填入Rtable对应行中</div></pre></td></tr></table></figure>
+<p>IGHT的过程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">1. 使用边缘检测算法计算图像中的所有边缘点和其梯度方向。</div><div class="line">遍历所有边缘点</div><div class="line">2. 计算该边缘点的不变角的值，通过不变角的值在rtable中查找对应行</div><div class="line">3. 对对应行中的所有k值，计算对应的投票直线的斜率值，同时在累积空间中对图形位置中心进行累加。</div><div class="line">4. 在累积空间中累积高度高的点则为匹配图形的中心。</div><div class="line">5. 通过IGHT反变换计算图形中心所对应的图形边缘点坐标</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;1-基本Hough变换&quot;&gt;&lt;a href=&quot;#1-基本Hough变换&quot; class=&quot;headerlink&quot; title=&quot;1. 基本Hough变换&quot;&gt;&lt;/a&gt;1. 基本Hough变换&lt;/h3&gt;&lt;h4 id=&quot;1-Lines&quot;&gt;&lt;a href=&quot;#1-Lines&quot; class=&quot;headerlink&quot; title=&quot;1)  Lines&quot;&gt;&lt;/a&gt;1)  Lines&lt;/h4&gt;&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;笛卡尔坐标表示&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLine.png&quot; alt=&quot;HoughLine&quot;&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;$$&lt;br&gt;\begin{align}&lt;br&gt;y=mx+c\ \ or\ \ Ax+By+1=0&lt;br&gt;\end{align}&lt;br&gt;$$&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="图像处理" scheme="https://plWang.github.io/tags/%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/"/>
+    
+      <category term="目标检测" scheme="https://plWang.github.io/tags/%E7%9B%AE%E6%A0%87%E6%A3%80%E6%B5%8B/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Spark安装与环境配置</title>
+    <link href="https://plWang.github.io/2016/08/19/Spark%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"/>
+    <id>https://plWang.github.io/2016/08/19/Spark安装与环境配置/</id>
+    <published>2016-08-19T01:00:00.000Z</published>
+    <updated>2016-10-14T02:47:07.836Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="1-Spark安装"><a href="#1-Spark安装" class="headerlink" title="1. Spark安装"></a>1. Spark安装</h2><p>在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。</p>
+<ol>
+<li>下载Spark<ul>
+<li>访问Spark下载页</li>
+<li>选择Spark最新版的pre-build安装包下载</li>
+</ul>
+</li>
+<li><p>解压</p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tar zvf spark-2.0.0-bin-hadoop2.7.tgz</div></pre></td></tr></table></figure>
+</li>
+<li><p>移动到有效目录下  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">mv spark-2.0.0-bin-hadoop2.7.tgz /srv/</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<a id="more"></a>
+<ol>
+<li><p>创建指向该版本Spark的链接  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ln -s /srv/spark-2.0.0-bin-hadoop2.7.tgz /srv/spark</div></pre></td></tr></table></figure>
+</li>
+<li><p>修改bash配置，设置SPARK_HOME环境变量。在ubuntu上，只要修改~/.bash_profile或～/.bash_rc文件，添加下面的语句  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">export SPARK_HOME=/srv/spark  </div><div class="line">export PATH=$SPARK_HOME/bin:$PATH</div></pre></td></tr></table></figure>
+</li>
+<li><p>source这些配置或重启终端后，运行pyspark命令，如果能正常打开pyspark解释器，则证明安装成功。</p>
+</li>
+</ol>
+<h2 id="2-在Spark中使用IPython-Notebook"><a href="#2-在Spark中使用IPython-Notebook" class="headerlink" title="2. 在Spark中使用IPython Notebook"></a>2. 在Spark中使用IPython Notebook</h2><p>IPython Notebook是交互的呈现科学和理论的必备工具，它能够集成文本和python代码。</p>
+<ol>
+<li><p>为Spark创建一个IPython notebook配置  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ipython profile create spark</div></pre></td></tr></table></figure>
+</li>
+<li><p>创建文件～/.ipython/profile_spark/startup/00-pyspark-setup.py，添加如下代码：  </p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">import</span> sys</div><div class="line"></div><div class="line"><span class="comment">#Configure the environment</span></div><div class="line"><span class="keyword">if</span> <span class="string">'SPARK_HOME'</span> <span class="keyword">not</span> <span class="keyword">in</span> os.environ:</div><div class="line">    os.environ[<span class="string">'SPARK_HOME'</span>] = <span class="string">'/srv/spark'</span></div><div class="line"><span class="comment">#create a variable for our root path</span></div><div class="line">SPARK_HOME = os.environ[<span class="string">'SPARK_HOME'</span>]</div><div class="line"></div><div class="line"><span class="comment">#Add the Pyspark/py4j to the Python Path</span></div><div class="line">sys.path.insert(<span class="number">0</span>, os.path.join(SPARK_HOME, <span class="string">"python"</span>, <span class="string">"build"</span>))</div><div class="line">sys.path.insert(<span class="number">0</span>, os.path.join(SPARK_HOME, <span class="string">"python"</span>))</div></pre></td></tr></table></figure>
+</li>
+<li><p>使用刚刚的配置来启动iPython notebook  </p>
+ <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ipython notebook --profile spark</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h2 id="3-测试ipython-notebook的spark配置是否成功"><a href="#3-测试ipython-notebook的spark配置是否成功" class="headerlink" title="3. 测试ipython notebook的spark配置是否成功"></a>3. 测试ipython notebook的spark配置是否成功</h2><pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span>  SparkContext</div><div class="line"><span class="keyword">try</span>:  </div><div class="line">    sc.stop() <span class="comment">#停止以前的SparkContext，要不然下面创建工作会失败  </span></div><div class="line"><span class="keyword">except</span>:  </div><div class="line">    <span class="keyword">pass</span></div><div class="line">sc = SparkContext( <span class="string">'local'</span>, <span class="string">'pyspark'</span>)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">isprime</span><span class="params">(n)</span>:</span></div><div class="line">    <span class="string">"""</span></div><div class="line">    check if integer n is a prime</div><div class="line">    """</div><div class="line">    <span class="comment"># make sure n is a positive integer</span></div><div class="line">    n = abs(int(n))</div><div class="line">    <span class="comment"># 0 and 1 are not primes</span></div><div class="line">    <span class="keyword">if</span> n &lt; <span class="number">2</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="comment"># 2 is the only even prime number</span></div><div class="line">    <span class="keyword">if</span> n == <span class="number">2</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">True</span></div><div class="line">    <span class="comment"># all other even numbers are not primes</span></div><div class="line">    <span class="keyword">if</span> <span class="keyword">not</span> n &amp; <span class="number">1</span>:</div><div class="line">        <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="comment"># range starts with 3 and only needs to go up the square root of n</span></div><div class="line">    <span class="comment"># for all odd numbers</span></div><div class="line">    <span class="keyword">for</span> x <span class="keyword">in</span> range(<span class="number">3</span>, int(n**<span class="number">0.5</span>)+<span class="number">1</span>, <span class="number">2</span>):</div><div class="line">        <span class="keyword">if</span> n % x == <span class="number">0</span>:</div><div class="line">            <span class="keyword">return</span> <span class="keyword">False</span></div><div class="line">    <span class="keyword">return</span> <span class="keyword">True</span></div><div class="line"> </div><div class="line"><span class="comment"># Create an RDD of numbers from 0 to 1,000,000</span></div><div class="line">nums = sc.parallelize(xrange(<span class="number">1000000</span>))</div><div class="line"> </div><div class="line"><span class="comment"># Compute the number of primes in the RDD</span></div><div class="line"><span class="keyword">print</span> nums.filter(isprime).count()</div></pre></td></tr></table></figure>
+</code></pre><p>运行上面的代码，如果能够正确计算得到一个数字并且没有错误发生，那么说明ipython的spark配置就成功了。</p>
+<p>需要注意：<br>ipython在启动时会自动加载本地spark配置创建一个SparkContext，所以可能需要在程序开头加上</p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">try</span>:  </div><div class="line">    sc.stop() <span class="comment">#停止以前的SparkContext，要不然下面创建工作会失败  </span></div><div class="line"><span class="keyword">except</span>:  </div><div class="line">    <span class="keyword">pass</span></div></pre></td></tr></table></figure>
+</code></pre><p>这段代码，停止以前的SparkContext，然后再创建新的SparkContext。</p>
+<h2 id="4-编写Spark应用"><a href="#4-编写Spark应用" class="headerlink" title="4. 编写Spark应用"></a>4. 编写Spark应用</h2><p>除了在pyspark命令行或者ipython notebook中使用Spark，我们也可以在本地编写一个Spark应用，下面以一个简单的wordCount应用为例。</p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span> SparkContext, SparkConf</div><div class="line"><span class="keyword">from</span> operator <span class="keyword">import</span> add</div><div class="line"></div><div class="line">APP_NAME= <span class="string">"My Spark Application"</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">tokenize</span><span class="params">(text)</span>:</span></div><div class="line">    <span class="keyword">return</span> text.split()</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(sc)</span>:</span></div><div class="line">    text = sc.textFile(<span class="string">"./cs100/lab1/shakespeare.txt"</span>)</div><div class="line">    words = text.flatMap(tokenize)</div><div class="line">    <span class="keyword">print</span> words</div><div class="line">    words_tuple = words.map(<span class="keyword">lambda</span> x: (x, <span class="number">1</span>))</div><div class="line">    words_count = words_tuple.reduceByKey(add)</div><div class="line">    words_count.saveAsTextFile(<span class="string">'wc'</span>)</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</div><div class="line">    <span class="comment">#configure Spark</span></div><div class="line">    conf = SparkConf().setAppName(APP_NAME)</div><div class="line">    conf = conf.setMaster(<span class="string">"local[*]"</span>)</div><div class="line">    sc = SparkContext(conf=conf)</div><div class="line"></div><div class="line">    main(sc)</div></pre></td></tr></table></figure>
+</code></pre><p>上面这段程序列出了一个Spark应用所需的东西：导入Python库，模块常量，用于调试和Spark UI的可是别的应用名称，<br>还有作为驱动程序的一些主要分析方法学。在ifmain中，我们创建了SparkContext，使用了配置好的context执行main。</p>
+<p>这段程序从文本文件中创建了一个RDD，  </p>
+<pre><code><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">text = sc.textFile(<span class="string">"./cs100/lab1/shakespeare.txt"</span>)</div></pre></td></tr></table></figure>
+</code></pre><p>然后，将文本拆分为单词  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">words = text.flatMap(tokenize)</div></pre></td></tr></table></figure>
+</code></pre><p>将每个单词映射为一个键值对，其中键是单词，值为１，然后使用reduceByKey计算每个键的总数。<br>最后将统计结果写入wc文件中。</p>
+<p>使用spark-submit命令来运行这段代码：  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">spark-submit demo.py</div></pre></td></tr></table></figure>
+</code></pre><p>运行结束后，我们可以看到在当前目录下有个wc目录  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ls wc  </div><div class="line">part-00000  part-00001  _SUCCESS</div></pre></td></tr></table></figure>
+</code></pre><p>每个part文件表示本机上的进程计算得到的最终RDD。查看每个part文件，就能够看到字数统计的元组。  </p>
+<pre><code><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">$ head wc/part-00000</div><div class="line">(u&apos;fawn&apos;, 11)</div><div class="line">(u&apos;considered-&apos;, 1)</div><div class="line">(u&apos;Fame,&apos;, 3)</div><div class="line">(u&apos;mustachio&apos;, 1)</div><div class="line">(u&apos;protested,&apos;, 1)</div><div class="line">(u&apos;sending.&apos;, 3)</div><div class="line">(u&apos;offendeth&apos;, 1)</div><div class="line">(u&apos;instant;&apos;, 1)</div><div class="line">(u&apos;scold&apos;, 4)</div><div class="line">(u&apos;Sergeant.&apos;, 1)</div></pre></td></tr></table></figure>
+</code></pre><h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><p><a href="http://blog.jobbole.com/86232/" target="_blank" rel="external">Spark入门（Python版）</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;1-Spark安装&quot;&gt;&lt;a href=&quot;#1-Spark安装&quot; class=&quot;headerlink&quot; title=&quot;1. Spark安装&quot;&gt;&lt;/a&gt;1. Spark安装&lt;/h2&gt;&lt;p&gt;在单机情况下安装Spark其实非常简单，只需要下载一个pre-build的包，并且保证安装有java和scala。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;下载Spark&lt;ul&gt;
+&lt;li&gt;访问Spark下载页&lt;/li&gt;
+&lt;li&gt;选择Spark最新版的pre-build安装包下载&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;解压&lt;/p&gt;
+ &lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;tar zvf spark-2.0.0-bin-hadoop2.7.tgz&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;移动到有效目录下  &lt;/p&gt;
+ &lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;1&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;div class=&quot;line&quot;&gt;mv spark-2.0.0-bin-hadoop2.7.tgz /srv/&lt;/div&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+    
+    </summary>
+    
+    
+      <category term="Spark" scheme="https://plWang.github.io/tags/Spark/"/>
+    
+      <category term="Python" scheme="https://plWang.github.io/tags/Python/"/>
+    
+      <category term="大数据" scheme="https://plWang.github.io/tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>JPEG-LS概述</title>
+    <link href="https://plWang.github.io/2016/07/11/JPEG-LS%E6%A6%82%E8%BF%B0/"/>
+    <id>https://plWang.github.io/2016/07/11/JPEG-LS概述/</id>
+    <published>2016-07-11T01:00:00.000Z</published>
+    <updated>2016-10-14T02:47:07.836Z</updated>
+    
+    <content type="html"><![CDATA[<p>JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒Golomb编码算法，对于图像中的平坦区域采用游长模式编码，否则采用常规模式编码。与JPEG、JPEG2000等流行的图像压缩算法相比较，JPEG-LS在无损压缩领域具有高保真和低复杂度等特点，便于硬件实现。<br>JPEG-LS编码模式与JPEG无失真模式(Lossless JPEG)相比较，区别主要在于JPEG-LS利用了Golomb行程编码，并且引入了误差可以控制的近无误（near-lossless）图像压缩。<br><a id="more"></a><br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/JPEG_LS_flowchart.jpg" alt="JPEG-LS flowchart">  </p>
+<h3 id="JPEG-LS编码流程"><a href="#JPEG-LS编码流程" class="headerlink" title="JPEG-LS编码流程"></a>JPEG-LS编码流程</h3><p>JPEG-LS的核心基于LOCO-I算法。LOCO-I算法结合了Huffman编码的简单（相对于算数编码）和上下文建模的巨大压缩<br>潜力，因此取了众家之长。该算法使用了一种具有边缘检测功能的非线性预测器，并且基于一个非常简单的由量化梯度<br>决定的上下文模型。</p>
+<h4 id="2-1-上下文建模"><a href="#2-1-上下文建模" class="headerlink" title="2.1 上下文建模"></a>2.1 上下文建模</h4><p>所谓上下文建模就是指利用当前待编码数据的邻居与当前像素之间的相关性对其建模。假设当前像素值<br>为x，与其相邻的四个像素值分别为a,b,c,d, 利用这四个像素样本来确定x的编码方式，即是采用常规编码<br>还是游程长度编码。<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/context.png" alt="JPEG-LS的因果模板"></p>
+<p>上下文建模的步骤为：  </p>
+<ul>
+<li><p>梯度计算：上下文确定程序的第一步应该是计算梯度值D1, D2, D3, 计算公式如下：<br>$$<br>\begin{aligned}<br>D1 = Rd - Rb \\\\<br>D2 = Rb - Rc \\\\<br>D3 = Rc - Ra \\\\<br>\end{aligned}<br>$$</p>
+</li>
+<li><p>模式选择：如果当梯度值D1, D2, D3全为0时（对于无损压缩）或者全小于等于NEAR（近无损压缩<br>的压缩比控制因子）时，编码选择游长模式编码，否则选择常规模式编码。</p>
+</li>
+<li><p>局部梯度值量化<br>局部梯度值会被量化到９个区间，然后得到９个值。下面代码中的T1, T2, T3是为量化区间设置的阈值，<br>Q1, Q2, Q3是量化后的梯度值，(Q1, Q2, Q3)组成一个向量Q，决定当前取样点x的上下文。  </p>
+</li>
+</ul>
+<p><strong>梯度量化表</strong></p>
+<table>
+<thead>
+<tr>
+<th>Qi</th>
+<th style="text-align:center">Di</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-4</td>
+<td style="text-align:center">$Di \leq -T3$</td>
+</tr>
+<tr>
+<td>-3</td>
+<td style="text-align:center">$-T3 &lt; Di \leq -T2$</td>
+</tr>
+<tr>
+<td>-2</td>
+<td style="text-align:center">$-T2 &lt; Di \leq -T1$</td>
+</tr>
+<tr>
+<td>-1</td>
+<td style="text-align:center">$-T1 &lt; Di \leq -NEAR$</td>
+</tr>
+<tr>
+<td>0</td>
+<td style="text-align:center">$-NEAR &lt; Di \leq NEAR$</td>
+</tr>
+<tr>
+<td>1</td>
+<td style="text-align:center">$NEAR &lt; Di \leq T1$</td>
+</tr>
+<tr>
+<td>2</td>
+<td style="text-align:center">$T1 &lt; Di \leq T2$</td>
+</tr>
+<tr>
+<td>3</td>
+<td style="text-align:center">$T2 &lt; Di \leq T3$</td>
+</tr>
+<tr>
+<td>4</td>
+<td style="text-align:center">其他</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>量化梯度合并<br>如果量化向量$(Q1, Q2, Q3)$的第一个非零元素是负值，则将所有元素的值取反，即取为<br>$(-Q1, -Q2, -Q3)$。在这种情况下，变量$SIGN$取值为-1，否则取值为+1。其目的是进行对称上下文的合并。</li>
+</ul>
+<h4 id="2-2-常规模式编码"><a href="#2-2-常规模式编码" class="headerlink" title="2.2 常规模式编码"></a>2.2 常规模式编码</h4><p>常规模式编码分三个步骤进行：  </p>
+<ul>
+<li>第一步，预测  </li>
+<li>第二步，预测误差编码  </li>
+<li>第三步，变量更新  </li>
+</ul>
+<p>对这三个步骤又可以详细划分，如下图所示：<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/regular_coding.png" alt="常规模式编码步骤">  </p>
+<h5 id="预测"><a href="#预测" class="headerlink" title="预测"></a>预测</h5><p>预测过程只在常规模式下进行，总共包含５个步骤。  </p>
+<ul>
+<li><p>边界检测<br>预测值Px由样本重建值Ra, Rb, Rc来确定，具体计算公式如下：<br>$$<br>P(x) =<br>\begin{cases}<br>min(Ra, Rb) &amp; \quad Rc \geqslant max(Ra, Rb) \\\\<br>max(Ra, Rb) &amp; \quad Rc \leqslant min(Ra, Rb) \\\\<br>Ra + Rb - Rc &amp; \quad 其他<br>\end{cases}<br>$$</p>
+</li>
+<li><p>预测值修正<br>预测值需要通过下面的方法进行修正。<br>$$<br>Px =<br>\begin{cases}<br>Px + C[Q] &amp; \quad SIGN = 1\\\\<br>Px - C[Q] &amp; \quad SIGN = -1<br>\end{cases}<br>$$<br>得到的新的Px值需要限制在[0, MAXVAL]区间内。</p>
+</li>
+<li><p>预测误差计算<br>得到修正后的预测值Px之后，要进行预测误差的计算，这里预测误差用Errval表示。<br>$$<br>\begin{aligned}<br>Errval &amp; = Ix - Px \\\\<br>if \ SIGN &amp; = -1, Errval = -Errval<br>\end{aligned}<br>$$</p>
+</li>
+<li><p>近无损模式下的误差量化和重建值计算<br>在无损模式下(NEAR = 0)，重建值Rx应设置位为Ix。<br>在近无损模式下(NEAR &gt; 0)，误差值需要进行量化。量化之后，需要按照下面的方法进行重建值计算。<br>$$<br>Errval =<br>\begin{cases}<br>(Errval + NEAR) / (2 \times NEAR + 1) &amp; \quad Errval&gt;0 \\\\<br>-(NEAR-Errval) / (2 \times NEAR + 1) &amp; \quad Errval \leq 0<br>\end{cases}<br>$$<br>$$<br>Rx = Px + SIGN \times Errval \times (2 \times NEAR + 1)<br>$$<br>Rx取值也应在区间[0, MAXVAL]内。<br>接下来对误差值Errval进行约束，使其取值在(-RANGE/2, RANGE/2-1)范围内。<br>$$<br>Errval =<br>\begin{cases}<br>Errval + RANGE &amp; \quad Errval &lt; 0 \\\\<br>Errval - RANGE &amp; \quad Errval \geq (RANGE + 1)/2<br>\end{cases}<br>$$</p>
+</li>
+</ul>
+<h5 id="预测误差编码"><a href="#预测误差编码" class="headerlink" title="预测误差编码"></a>预测误差编码</h5><ul>
+<li>Golomb编码参数k计算<br>$$<br>for (k=0; (N(Q) &lt;&lt; K) &lt; A[Q]; k++);<br>$$</li>
+<li><p>误差值重映射</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">if ((NEAR == 0) &amp;&amp; (k == 0) &amp;&amp; (2*B[Q] &lt;= -N[Q])) &#123;</div><div class="line">    if (Errval &gt;= 0)</div><div class="line">        Merrval = 2*Errval + 1;</div><div class="line">    else</div><div class="line">        Merrval = -2*(Errval + 1);</div><div class="line">&#125;</div><div class="line">else &#123;</div><div class="line">    if (Errval &gt;= 0)</div><div class="line">        Merrval = 2*Errval;</div><div class="line">    else</div><div class="line">        Merrval = -2*Errval - 1;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>重映射误差编码<br>重映射得到的误差值需要使用有限长的Golomb编码函数$LG(k, LIMIT)$进行编码：  </p>
+</li>
+</ul>
+<h5 id="变量更新"><a href="#变量更新" class="headerlink" title="变量更新"></a>变量更新</h5><p>常规模式的最后一步，是对变量A, B, C和N进行更新，为下一次编码做准备。这些更新是在编码过程的结尾进行的，<br>在参数k和映射误差ME被计算之后。</p>
+<h4 id="2-3-游程模式编码"><a href="#2-3-游程模式编码" class="headerlink" title="2.3 游程模式编码"></a>2.3 游程模式编码</h4><ul>
+<li><p>更新<br>变量A[Q]、B[Q]、N[Q]的值是根据当前预测残差E来确定的，如下面步骤所示，其中RESET是标志位，表示要重置变量值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">B[Q] = B[Q] + E*(2*NEAR + 1);</div><div class="line">A[Q] = A[Q] + abs(E);</div><div class="line">if (N[Q] == RESET)</div><div class="line">&#123;</div><div class="line">   A[Q] = A[Q] &gt;&gt; 1;</div><div class="line">   if (B[Q] &gt;= 0)</div><div class="line">            B[Q] = B[Q] &gt;&gt; 1;</div><div class="line">   else</div><div class="line">            B[Q] = -((1-B[Q])&gt;&gt;1);</div><div class="line">   N[Q] = N[Q] &gt;&gt; 1;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>偏差计算<br>由于系统误差会导致残差的分布偏离中心点0，为了进行补偿，我么会将一个修正值加到预测值Px上去，而这个修正值C[Q]有下述过程计算得到。其中，MAX_C和MIN_C是修正值的上下限。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">if (B[Q] &lt;= -N[Q])</div><div class="line">&#123;</div><div class="line">   B[Q] = B[Q] + N[Q];</div><div class="line">   if (C[Q] &gt; MIN_C)</div><div class="line">            C[Q] = C[Q] – 1;</div><div class="line">   if (B[Q] &lt;= -N[Q])</div><div class="line">            B[Q] = -N[Q] + 1;</div><div class="line">&#125;</div><div class="line">else if (B[Q] &gt; 0)</div><div class="line">&#123;</div><div class="line">   B[Q] = B[Q] – N[Q];</div><div class="line">   if (C[Q] &lt; MAX_C)</div><div class="line">            C[Q] = C[Q] + 1;</div><div class="line">   If(B[Q] &gt; 0)</div><div class="line">            B[Q] = 0;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="2-3-游程模式编码-1"><a href="#2-3-游程模式编码-1" class="headerlink" title="2.3 游程模式编码"></a>2.3 游程模式编码</h4><h5 id="游程扫描"><a href="#游程扫描" class="headerlink" title="游程扫描"></a>游程扫描</h5><p>如果在模式选择过程中进入了游程模式，则会进行游程扫描然后编码。游程编码的第一步是将下一个像素值读入变量Ix中，然后更新游程长度RUNcnt，如此往复直至游程中断。其中RUNval表示当前游程对应的像素值,EOLine是一个标志，它的置为表示当前游程的结束，GetNextSample()函数的功能是读入下一个像素到Ix中。</p>
+<h5 id="游程长度编码"><a href="#游程长度编码" class="headerlink" title="游程长度编码"></a>游程长度编码</h5><h3 id="JPEG-LS译码过程"><a href="#JPEG-LS译码过程" class="headerlink" title="JPEG-LS译码过程"></a>JPEG-LS译码过程</h3><p>译码过程是编码的逆过程，即一职上下文Ra, Rb, Rc, Rd的值而求Rx的值，具体流程如下：<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/decoding.png" alt="解码流程"></p>
+<h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p><a href="http://fileformats.archiveteam.org/wiki/JPEG-LS" target="_blank" rel="external">JPEG-LS Wikipedia</a><br><a href="http://blog.sina.com.cn/s/blog_79ce0d8f0101g0ml.html" target="_blank" rel="external">JPEG图像编码算法和研究</a></p>
+<h3 id="Implementations"><a href="#Implementations" class="headerlink" title="Implementations"></a>Implementations</h3><p><a href="https://github.com/thorfdbg/libjpeg" target="_blank" rel="external">libjpeg-JPEG官网</a><br><a href="https://github.com/team-charls/charls" target="_blank" rel="external">CharLS by Jane de Vann is written in portable C++</a><br><a href="http://www.stat.columbia.edu/~jakulin/jpeg-ls/mirror.htm" target="_blank" rel="external">Mirror of UBC implementations</a><br><a href="http://www.labs.hp.com/research/info_theory/loco/" target="_blank" rel="external">The “official” HP  Laboratories page</a><br><a href="http://www.dclunie.com/jpegls.html" target="_blank" rel="external">D.A.Clunie’s implementation</a><br><a href="http://www.itu.int/rec/T-REC-T.87-199806-I/en" target="_blank" rel="external">ITU-T T.87 Basic</a><br><a href="http://www.itu.int/rec/T-REC-T.870-200203-I/en" target="_blank" rel="external">ITU-T T.870 Extention</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒Golomb编码算法，对于图像中的平坦区域采用游长模式编码，否则采用常规模式编码。与JPEG、JPEG2000等流行的图像压缩算法相比较，JPEG-LS在无损压缩领域具有高保真和低复杂度等特点，便于硬件实现。&lt;br&gt;JPEG-LS编码模式与JPEG无失真模式(Lossless JPEG)相比较，区别主要在于JPEG-LS利用了Golomb行程编码，并且引入了误差可以控制的近无误（near-lossless）图像压缩。&lt;br&gt;
+    
+    </summary>
+    
+    
+      <category term="图像压缩" scheme="https://plWang.github.io/tags/%E5%9B%BE%E5%83%8F%E5%8E%8B%E7%BC%A9/"/>
+    
+  </entry>
+  
+</feed>

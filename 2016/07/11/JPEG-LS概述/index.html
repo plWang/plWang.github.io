@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>jpeg-ls概述 | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="图像压缩" />
+  
+  
+  
+  
+  <meta name="description" content="JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JPEG-LS概述">
+<meta property="og:url" content="https://plWang.github.io/2016/07/11/JPEG-LS概述/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/JPEG_LS_flowchart.jpg">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/context.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/regular_coding.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/decoding.png">
+<meta property="og:updated_time" content="2016-10-14T02:47:07.836Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JPEG-LS概述">
+<meta name="twitter:description" content="JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒">
+<meta name="twitter:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/JPEG_LS_flowchart.jpg">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-JPEG-LS概述" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      JPEG-LS概述
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2016/07/11/JPEG-LS概述/" class="article-date">
+	  <time datetime="2016-07-11T01:00:00.000Z" itemprop="datePublished">2016-07-11</time>
+	</a>
+
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>JPEG-LS是一种新的针对连续色调静态图像的无损/进无损的压缩标准，是基于HP实验室Weinberger等人提出的LOCO-I(LOw COmplexity Lossless Compression for Image:低复杂度无损图像压缩)压缩方法，1998年6月作为ITU-T建议T.87标准/ ISO/ICE14495-1:1999正式发布。其核心压缩算法主要包括基于自适应预测、上下文建模盒Golomb编码算法，对于图像中的平坦区域采用游长模式编码，否则采用常规模式编码。与JPEG、JPEG2000等流行的图像压缩算法相比较，JPEG-LS在无损压缩领域具有高保真和低复杂度等特点，便于硬件实现。<br>JPEG-LS编码模式与JPEG无失真模式(Lossless JPEG)相比较，区别主要在于JPEG-LS利用了Golomb行程编码，并且引入了误差可以控制的近无误（near-lossless）图像压缩。<br><a id="more"></a><br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/JPEG_LS_flowchart.jpg" alt="JPEG-LS flowchart">  </p>
+<h3 id="JPEG-LS编码流程"><a href="#JPEG-LS编码流程" class="headerlink" title="JPEG-LS编码流程"></a>JPEG-LS编码流程</h3><p>JPEG-LS的核心基于LOCO-I算法。LOCO-I算法结合了Huffman编码的简单（相对于算数编码）和上下文建模的巨大压缩<br>潜力，因此取了众家之长。该算法使用了一种具有边缘检测功能的非线性预测器，并且基于一个非常简单的由量化梯度<br>决定的上下文模型。</p>
+<h4 id="2-1-上下文建模"><a href="#2-1-上下文建模" class="headerlink" title="2.1 上下文建模"></a>2.1 上下文建模</h4><p>所谓上下文建模就是指利用当前待编码数据的邻居与当前像素之间的相关性对其建模。假设当前像素值<br>为x，与其相邻的四个像素值分别为a,b,c,d, 利用这四个像素样本来确定x的编码方式，即是采用常规编码<br>还是游程长度编码。<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/context.png" alt="JPEG-LS的因果模板"></p>
+<p>上下文建模的步骤为：  </p>
+<ul>
+<li><p>梯度计算：上下文确定程序的第一步应该是计算梯度值D1, D2, D3, 计算公式如下：<br>$$<br>\begin{aligned}<br>D1 = Rd - Rb \\\\<br>D2 = Rb - Rc \\\\<br>D3 = Rc - Ra \\\\<br>\end{aligned}<br>$$</p>
+</li>
+<li><p>模式选择：如果当梯度值D1, D2, D3全为0时（对于无损压缩）或者全小于等于NEAR（近无损压缩<br>的压缩比控制因子）时，编码选择游长模式编码，否则选择常规模式编码。</p>
+</li>
+<li><p>局部梯度值量化<br>局部梯度值会被量化到９个区间，然后得到９个值。下面代码中的T1, T2, T3是为量化区间设置的阈值，<br>Q1, Q2, Q3是量化后的梯度值，(Q1, Q2, Q3)组成一个向量Q，决定当前取样点x的上下文。  </p>
+</li>
+</ul>
+<p><strong>梯度量化表</strong></p>
+<table>
+<thead>
+<tr>
+<th>Qi</th>
+<th style="text-align:center">Di</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-4</td>
+<td style="text-align:center">$Di \leq -T3$</td>
+</tr>
+<tr>
+<td>-3</td>
+<td style="text-align:center">$-T3 &lt; Di \leq -T2$</td>
+</tr>
+<tr>
+<td>-2</td>
+<td style="text-align:center">$-T2 &lt; Di \leq -T1$</td>
+</tr>
+<tr>
+<td>-1</td>
+<td style="text-align:center">$-T1 &lt; Di \leq -NEAR$</td>
+</tr>
+<tr>
+<td>0</td>
+<td style="text-align:center">$-NEAR &lt; Di \leq NEAR$</td>
+</tr>
+<tr>
+<td>1</td>
+<td style="text-align:center">$NEAR &lt; Di \leq T1$</td>
+</tr>
+<tr>
+<td>2</td>
+<td style="text-align:center">$T1 &lt; Di \leq T2$</td>
+</tr>
+<tr>
+<td>3</td>
+<td style="text-align:center">$T2 &lt; Di \leq T3$</td>
+</tr>
+<tr>
+<td>4</td>
+<td style="text-align:center">其他</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>量化梯度合并<br>如果量化向量$(Q1, Q2, Q3)$的第一个非零元素是负值，则将所有元素的值取反，即取为<br>$(-Q1, -Q2, -Q3)$。在这种情况下，变量$SIGN$取值为-1，否则取值为+1。其目的是进行对称上下文的合并。</li>
+</ul>
+<h4 id="2-2-常规模式编码"><a href="#2-2-常规模式编码" class="headerlink" title="2.2 常规模式编码"></a>2.2 常规模式编码</h4><p>常规模式编码分三个步骤进行：  </p>
+<ul>
+<li>第一步，预测  </li>
+<li>第二步，预测误差编码  </li>
+<li>第三步，变量更新  </li>
+</ul>
+<p>对这三个步骤又可以详细划分，如下图所示：<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/regular_coding.png" alt="常规模式编码步骤">  </p>
+<h5 id="预测"><a href="#预测" class="headerlink" title="预测"></a>预测</h5><p>预测过程只在常规模式下进行，总共包含５个步骤。  </p>
+<ul>
+<li><p>边界检测<br>预测值Px由样本重建值Ra, Rb, Rc来确定，具体计算公式如下：<br>$$<br>P(x) =<br>\begin{cases}<br>min(Ra, Rb) &amp; \quad Rc \geqslant max(Ra, Rb) \\\\<br>max(Ra, Rb) &amp; \quad Rc \leqslant min(Ra, Rb) \\\\<br>Ra + Rb - Rc &amp; \quad 其他<br>\end{cases}<br>$$</p>
+</li>
+<li><p>预测值修正<br>预测值需要通过下面的方法进行修正。<br>$$<br>Px =<br>\begin{cases}<br>Px + C[Q] &amp; \quad SIGN = 1\\\\<br>Px - C[Q] &amp; \quad SIGN = -1<br>\end{cases}<br>$$<br>得到的新的Px值需要限制在[0, MAXVAL]区间内。</p>
+</li>
+<li><p>预测误差计算<br>得到修正后的预测值Px之后，要进行预测误差的计算，这里预测误差用Errval表示。<br>$$<br>\begin{aligned}<br>Errval &amp; = Ix - Px \\\\<br>if \ SIGN &amp; = -1, Errval = -Errval<br>\end{aligned}<br>$$</p>
+</li>
+<li><p>近无损模式下的误差量化和重建值计算<br>在无损模式下(NEAR = 0)，重建值Rx应设置位为Ix。<br>在近无损模式下(NEAR &gt; 0)，误差值需要进行量化。量化之后，需要按照下面的方法进行重建值计算。<br>$$<br>Errval =<br>\begin{cases}<br>(Errval + NEAR) / (2 \times NEAR + 1) &amp; \quad Errval&gt;0 \\\\<br>-(NEAR-Errval) / (2 \times NEAR + 1) &amp; \quad Errval \leq 0<br>\end{cases}<br>$$<br>$$<br>Rx = Px + SIGN \times Errval \times (2 \times NEAR + 1)<br>$$<br>Rx取值也应在区间[0, MAXVAL]内。<br>接下来对误差值Errval进行约束，使其取值在(-RANGE/2, RANGE/2-1)范围内。<br>$$<br>Errval =<br>\begin{cases}<br>Errval + RANGE &amp; \quad Errval &lt; 0 \\\\<br>Errval - RANGE &amp; \quad Errval \geq (RANGE + 1)/2<br>\end{cases}<br>$$</p>
+</li>
+</ul>
+<h5 id="预测误差编码"><a href="#预测误差编码" class="headerlink" title="预测误差编码"></a>预测误差编码</h5><ul>
+<li>Golomb编码参数k计算<br>$$<br>for (k=0; (N(Q) &lt;&lt; K) &lt; A[Q]; k++);<br>$$</li>
+<li><p>误差值重映射</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">if ((NEAR == 0) &amp;&amp; (k == 0) &amp;&amp; (2*B[Q] &lt;= -N[Q])) &#123;</div><div class="line">    if (Errval &gt;= 0)</div><div class="line">        Merrval = 2*Errval + 1;</div><div class="line">    else</div><div class="line">        Merrval = -2*(Errval + 1);</div><div class="line">&#125;</div><div class="line">else &#123;</div><div class="line">    if (Errval &gt;= 0)</div><div class="line">        Merrval = 2*Errval;</div><div class="line">    else</div><div class="line">        Merrval = -2*Errval - 1;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>重映射误差编码<br>重映射得到的误差值需要使用有限长的Golomb编码函数$LG(k, LIMIT)$进行编码：  </p>
+</li>
+</ul>
+<h5 id="变量更新"><a href="#变量更新" class="headerlink" title="变量更新"></a>变量更新</h5><p>常规模式的最后一步，是对变量A, B, C和N进行更新，为下一次编码做准备。这些更新是在编码过程的结尾进行的，<br>在参数k和映射误差ME被计算之后。</p>
+<h4 id="2-3-游程模式编码"><a href="#2-3-游程模式编码" class="headerlink" title="2.3 游程模式编码"></a>2.3 游程模式编码</h4><ul>
+<li><p>更新<br>变量A[Q]、B[Q]、N[Q]的值是根据当前预测残差E来确定的，如下面步骤所示，其中RESET是标志位，表示要重置变量值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">B[Q] = B[Q] + E*(2*NEAR + 1);</div><div class="line">A[Q] = A[Q] + abs(E);</div><div class="line">if (N[Q] == RESET)</div><div class="line">&#123;</div><div class="line">   A[Q] = A[Q] &gt;&gt; 1;</div><div class="line">   if (B[Q] &gt;= 0)</div><div class="line">            B[Q] = B[Q] &gt;&gt; 1;</div><div class="line">   else</div><div class="line">            B[Q] = -((1-B[Q])&gt;&gt;1);</div><div class="line">   N[Q] = N[Q] &gt;&gt; 1;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>偏差计算<br>由于系统误差会导致残差的分布偏离中心点0，为了进行补偿，我么会将一个修正值加到预测值Px上去，而这个修正值C[Q]有下述过程计算得到。其中，MAX_C和MIN_C是修正值的上下限。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">if (B[Q] &lt;= -N[Q])</div><div class="line">&#123;</div><div class="line">   B[Q] = B[Q] + N[Q];</div><div class="line">   if (C[Q] &gt; MIN_C)</div><div class="line">            C[Q] = C[Q] – 1;</div><div class="line">   if (B[Q] &lt;= -N[Q])</div><div class="line">            B[Q] = -N[Q] + 1;</div><div class="line">&#125;</div><div class="line">else if (B[Q] &gt; 0)</div><div class="line">&#123;</div><div class="line">   B[Q] = B[Q] – N[Q];</div><div class="line">   if (C[Q] &lt; MAX_C)</div><div class="line">            C[Q] = C[Q] + 1;</div><div class="line">   If(B[Q] &gt; 0)</div><div class="line">            B[Q] = 0;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="2-3-游程模式编码-1"><a href="#2-3-游程模式编码-1" class="headerlink" title="2.3 游程模式编码"></a>2.3 游程模式编码</h4><h5 id="游程扫描"><a href="#游程扫描" class="headerlink" title="游程扫描"></a>游程扫描</h5><p>如果在模式选择过程中进入了游程模式，则会进行游程扫描然后编码。游程编码的第一步是将下一个像素值读入变量Ix中，然后更新游程长度RUNcnt，如此往复直至游程中断。其中RUNval表示当前游程对应的像素值,EOLine是一个标志，它的置为表示当前游程的结束，GetNextSample()函数的功能是读入下一个像素到Ix中。</p>
+<h5 id="游程长度编码"><a href="#游程长度编码" class="headerlink" title="游程长度编码"></a>游程长度编码</h5><h3 id="JPEG-LS译码过程"><a href="#JPEG-LS译码过程" class="headerlink" title="JPEG-LS译码过程"></a>JPEG-LS译码过程</h3><p>译码过程是编码的逆过程，即一职上下文Ra, Rb, Rc, Rd的值而求Rx的值，具体流程如下：<br><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/decoding.png" alt="解码流程"></p>
+<h3 id="References"><a href="#References" class="headerlink" title="References"></a>References</h3><p><a href="http://fileformats.archiveteam.org/wiki/JPEG-LS" target="_blank" rel="external">JPEG-LS Wikipedia</a><br><a href="http://blog.sina.com.cn/s/blog_79ce0d8f0101g0ml.html" target="_blank" rel="external">JPEG图像编码算法和研究</a></p>
+<h3 id="Implementations"><a href="#Implementations" class="headerlink" title="Implementations"></a>Implementations</h3><p><a href="https://github.com/thorfdbg/libjpeg" target="_blank" rel="external">libjpeg-JPEG官网</a><br><a href="https://github.com/team-charls/charls" target="_blank" rel="external">CharLS by Jane de Vann is written in portable C++</a><br><a href="http://www.stat.columbia.edu/~jakulin/jpeg-ls/mirror.htm" target="_blank" rel="external">Mirror of UBC implementations</a><br><a href="http://www.labs.hp.com/research/info_theory/loco/" target="_blank" rel="external">The “official” HP  Laboratories page</a><br><a href="http://www.dclunie.com/jpegls.html" target="_blank" rel="external">D.A.Clunie’s implementation</a><br><a href="http://www.itu.int/rec/T-REC-T.87-199806-I/en" target="_blank" rel="external">ITU-T T.87 Basic</a><br><a href="http://www.itu.int/rec/T-REC-T.870-200203-I/en" target="_blank" rel="external">ITU-T T.870 Extention</a></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/图像压缩/">图像压缩</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/08/19/Spark安装与环境配置/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Spark安装与环境配置
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#JPEG-LS编码流程"><span class="toc-number">1.</span> <span class="toc-text">JPEG-LS编码流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-上下文建模"><span class="toc-number">1.1.</span> <span class="toc-text">2.1 上下文建模</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-常规模式编码"><span class="toc-number">1.2.</span> <span class="toc-text">2.2 常规模式编码</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#预测"><span class="toc-number">1.2.1.</span> <span class="toc-text">预测</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#预测误差编码"><span class="toc-number">1.2.2.</span> <span class="toc-text">预测误差编码</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#变量更新"><span class="toc-number">1.2.3.</span> <span class="toc-text">变量更新</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3-游程模式编码"><span class="toc-number">1.3.</span> <span class="toc-text">2.3 游程模式编码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3-游程模式编码-1"><span class="toc-number">1.4.</span> <span class="toc-text">2.3 游程模式编码</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#游程扫描"><span class="toc-number">1.4.1.</span> <span class="toc-text">游程扫描</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#游程长度编码"><span class="toc-number">1.4.2.</span> <span class="toc-text">游程长度编码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JPEG-LS译码过程"><span class="toc-number">2.</span> <span class="toc-text">JPEG-LS译码过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#References"><span class="toc-number">3.</span> <span class="toc-text">References</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Implementations"><span class="toc-number">4.</span> <span class="toc-text">Implementations</span></a></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>

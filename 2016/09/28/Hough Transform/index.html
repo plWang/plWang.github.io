@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
+  
+  <title>hough transform原理 | plWang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  
+  <meta name="keywords" content="图像处理目标检测" />
+  
+  
+  
+  
+  <meta name="description" content="1. 基本Hough变换1)  Lines
+笛卡尔坐标表示
+
+
+
+$$\begin{align}y=mx+c\ \ or\ \ Ax+By+1=0\end{align}$$">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hough Transform原理">
+<meta property="og:url" content="https://plWang.github.io/2016/09/28/Hough Transform/index.html">
+<meta property="og:site_name" content="plWang's Blog">
+<meta property="og:description" content="1. 基本Hough变换1)  Lines
+笛卡尔坐标表示
+
+
+
+$$\begin{align}y=mx+c\ \ or\ \ Ax+By+1=0\end{align}$$">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLine.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLinePolar.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HTEllipse.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_derivative.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_geometry.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/eliipse_geomrtry.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_GHT.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_IGHT.png">
+<meta property="og:updated_time" content="2016-12-05T07:34:17.495Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Hough Transform原理">
+<meta name="twitter:description" content="1. 基本Hough变换1)  Lines
+笛卡尔坐标表示
+
+
+
+$$\begin{align}y=mx+c\ \ or\ \ Ax+By+1=0\end{align}$$">
+<meta name="twitter:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLine.png">
+  
+    <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
+  
+  <link rel="icon" href="/css/images/mylogo.jpg">
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Montserrat:700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic" rel="stylesheet" type="text/css">
+  <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+  <style type="text/css">
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/9749f0/00000000000000000001008f/27/l?subset_id=2&fvd=n5) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/90cf9f/000000000000000000010091/27/l?subset_id=2&fvd=n7) format("woff2");font-weight:500;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/8a5494/000000000000000000013365/27/l?subset_id=2&fvd=n4) format("woff2");font-weight:lighter;font-style:normal;}
+    @font-face{font-family:futura-pt;src:url(https://use.typekit.net/af/d337d8/000000000000000000010095/27/l?subset_id=2&fvd=i4) format("woff2");font-weight:400;font-style:italic;}</style>
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="/js/jquery-3.1.1.min.js"></script>
+
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.css" >
+
+  
+    <link rel="stylesheet" href="/css/dialog.css">
+  
+
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+  
+
+</head>
+
+<body>
+  
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
+      
+        <header>
+
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
+
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
+
+</header>
+
+
+
+      
+            
+      <div id="content" class="outer">
+        
+          <section id="main" style="float:none;"><article id="post-Hough Transform" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" class="article-title" itemprop="name">
+      Hough Transform原理
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2016/09/28/Hough Transform/" class="article-date">
+	  <time datetime="2016-09-28T13:00:00.000Z" itemprop="datePublished">2016-09-28</time>
+	</a>
+
+      
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="1-基本Hough变换"><a href="#1-基本Hough变换" class="headerlink" title="1. 基本Hough变换"></a>1. 基本Hough变换</h3><h4 id="1-Lines"><a href="#1-Lines" class="headerlink" title="1)  Lines"></a>1)  Lines</h4><ol>
+<li><p>笛卡尔坐标表示</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLine.png" alt="HoughLine"></p>
+</li>
+</ol>
+<p>$$<br>\begin{align}<br>y=mx+c\ \ or\ \ Ax+By+1=0<br>\end{align}<br>$$<br><a id="more"></a><br>   xy空间中的一条直线对应Hough空间的一个点(A,B)</p>
+<ol>
+<li><p>极坐标表示</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HoughLinePolar.png" alt="HoughLinePolar"></p>
+</li>
+</ol>
+<p>$$<br>c=\frac{\rho}{sin(\theta)}\ \ \ m=-\frac{1}{tan(\theta)}<br>$$</p>
+<p>   代入公式1中，可得<br>$$<br>\rho=xcos(\theta)+ysin(\theta)<br>$$</p>
+<h4 id="2-Circles"><a href="#2-Circles" class="headerlink" title="2) Circles"></a>2) Circles</h4><p>$$<br>(x-x_0)^2+(y-y_0)^2=r^2<br>$$</p>
+<p>上述公式可以表示成参数形式<br>$$<br>x_0=x-rcos(\theta)\\<br>y_0=y-rsin(\theta)<br>$$<br>注意，上面公式中的$\theta$不是自由变量，但是定义了曲线的轨迹。</p>
+<h4 id="3-Ellipse"><a href="#3-Ellipse" class="headerlink" title="3) Ellipse"></a>3) Ellipse</h4><p>我们定义一个圆到椭圆的映射<br>$$<br>\begin{bmatrix}x\\y\end{bmatrix}=<br>\begin{bmatrix}cos(\rho) &amp; sin(\rho)\\ -sin(\rho)&amp;cos(\rho)\end{bmatrix}<br>\begin{bmatrix}S_x\\S_y\end{bmatrix}<br>\begin{bmatrix}x’\\y’\end{bmatrix} +<br>\begin{bmatrix}t_x\\t_y\end{bmatrix}<br>$$<br>其中\$\rho$表示方向，$(S_x,S_y)$表示尺度因子，$(t_x,t_y)$表示平移。</p>
+<p>如果我们定义<br>$$<br>a_0=t_x\ \ a_x=S_xcos(\rho)\ \ b_x=S_ysin(\rho)\\<br>b_0=t_y\ \ a_y=-S_xsin(\rho)\ \ b_y=S_ycos(\rho)<br>$$</p>
+<p>那么我们可以将椭圆方程变换为<br>$$<br>x=a_0+a_xcos(\theta)+b_xsin(\theta)\\<br>y=b_0+a_ycos(\theta)+b_ysin(\theta)<br>$$<br>上面的极坐标表示形式用$(a_0,b_0,a_x,b_x,a_y,b_y)$六个参数定义一个椭圆，其中$\theta$不是一个自由变量。</p>
+<p> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/HTEllipse.png" alt="HTEllipse"></p>
+<h3 id="2-参数空间分解"><a href="#2-参数空间分解" class="headerlink" title="2. 参数空间分解"></a>2. 参数空间分解</h3><h4 id="1-lines"><a href="#1-lines" class="headerlink" title="1) lines"></a>1) lines</h4><p>对于直线来说，考虑到我们可以通过图像中的信息计算出斜率，因此累积空间可以由二维降为一维。计算斜率有两种方法：</p>
+<ul>
+<li>使用图像中点的梯度方向，$m=\phi$</li>
+<li>通过图像中的一对点计算，$m=\frac{y_2-y_1}{x_2-x_1}$</li>
+</ul>
+<p>因此，直线的极坐标表示中其中一个参数$\theta$就可以计算出来</p>
+<p>$$<br>\theta=-tan^{-1}\left(\frac{1}{\phi}\right)\ \ or\ \ \theta=tan^{-1}\left(\frac{x_1-x_2}{y_2-y_1}\right)<br>$$</p>
+<h4 id="2-circles"><a href="#2-circles" class="headerlink" title="2) circles"></a>2) circles</h4><p>$$<br>v(\theta)=x(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$</p>
+<p>其中，<br>$$<br>x(\theta)=x_0+rcos(\theta)\ \ \ y(\theta)=y_0+rsin(\theta)<br>$$</p>
+<p>考虑它的一阶导和二阶导<br>$$<br>v’(\theta)=x’(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y’(\theta)\begin{bmatrix}0\\1\end{bmatrix}\\<br>v’’(\theta)=x’’(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y’’(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$<br>其中，<br>$$<br>x’(\theta)=-rsin(\theta)\ \ \ y’(\theta)=rcos(\theta)\\<br>x’’(\theta)=-rcos(\theta)\ \ \ y’’(\theta)=-rsin(\theta)<br>$$<br> <img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_derivative.png" alt="circles_derivative"></p>
+<p>根据上图的几何关系，可得到</p>
+<p>$$<br>\phi’’(\theta)=\frac{y’’(\theta)}{x(\theta)}=\frac{y(\theta)-y_0}{x(\theta)-x_0}<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x(\theta)-x_0)+y(\theta)<br>$$</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/circles_geometry.png" alt="circles_geometry"></p>
+<p>$\phi’’(\theta)$可以通过$\phi’’(\theta)$与$\phi’(\theta)$的关系计算<br>$$<br>\phi’’(\theta)=-\frac{1}{\phi’(\theta)}<br>$$<br>而$\phi’(\theta)$可以通过两种方式计算</p>
+<ul>
+<li>梯度</li>
+<li>圆上的一对点</li>
+</ul>
+<p>$$<br>\phi’(\theta)=\frac{y_2-y_1}{x_2-x_1}<br>$$</p>
+<p>$$<br>x_m=\frac{1}{2}(x_1+x_2)\ \ \ y_m=\frac{1}{2}(y_1+y_2)<br>$$</p>
+<p>$$<br>y_0=\phi’’(\theta)(x_m-x_0)+y_m<br>$$</p>
+<h4 id="3-Ellipse-1"><a href="#3-Ellipse-1" class="headerlink" title="3) Ellipse"></a>3) Ellipse</h4><p>$$<br>x(\theta)=a_0+a_xcos(\theta)+b_xsin(\theta)\ \ \ y(\theta)=b_0+a_ycos(\theta)+b_ysin(\theta)\\<br>x’(\theta)=-a_xsin(\theta)+b_xcos(\theta)\ \ \ y’(\theta)=-a_ysin(\theta)+b_ycos(\theta)\\<br>x’’(\theta)=-a_xcos(\theta)-b_xsin(\theta)\ \ \ y’’(\theta)=-a_ycos(\theta)-b_ysin(\theta)<br>$$</p>
+<p>一阶导数和二阶导数的角度的tangent值为<br>$$<br>\phi’(\theta)=\frac{y’(\theta)}{x’(\theta))}\\<br>\phi’’(\theta)=\frac{y’’(\theta)}{x’’(\theta))}<br>$$<br>与圆中类似，对于椭圆我们仍然有下面的关系<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\phi’’(\theta)<br>$$<br>然而，在椭圆中$\phi’(\theta)$和$\phi’’(\theta)$并不正交，因此，这使得$\phi’’(\theta)$的计算更加复杂。为了计算$\phi’’(\theta)$，我们使用椭圆上</p>
+<p>的两个点，他们的连线的斜率为$\phi’(\theta)$。上面公式定义的直线经过这两个点的中点$(x_m,y_m)$</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/eliipse_geomrtry.png" alt="eliipse_geomrtry"><br>$$<br>x_1=a_xcos(\theta_1)\ \ \ x_2=a_xcos(\theta_2)\ \ \ x(\theta)=a_xcos(\theta)\\<br>y_1=b_ysin(\theta_1)\ \ \ y_2=b_ysin(\theta_2)\ \ \ y(\theta)=b_ysin(\theta)<br>$$<br>点$(x(\theta),y(\theta))$是直线与椭圆的交点，所以有<br>$$<br>\frac{y(\theta)-y_0}{x(\theta)-x_0}=\frac{a_x}{b_y}.\frac{y_m}{x_m}<br>$$</p>
+<p>$$<br>\phi’’(\theta)=\frac{b_y}{a_x}tan(\theta)\\\\<br>\phi’’(\theta)=\frac{y_m}{x_m}<br>$$</p>
+<p>上式只在椭圆没有平移时成立，有平移时满足下面的公式<br>$$<br>\phi’’(\theta)=\frac{y_T-y_m}{x_T-x_m}<br>$$<br>其中$(x_T,y_T)$是两点$(x_1,y_1),(x_2,y_2)$的切线的交点。<br>$$<br>\phi’’(\theta)=\frac{AC+2BD}{2A+BC}<br>$$<br>其中<br>$$<br>A=y_1-y_2\ \ \ B=x_1-x_2\\<br>C=\phi_1-\phi_2\ \ \ D=\phi_1\phi_2<br>$$</p>
+<h3 id="3-广义霍夫变换"><a href="#3-广义霍夫变换" class="headerlink" title="3. 广义霍夫变换"></a>3. 广义霍夫变换</h3><p> 通过将上面表示形状的公式进行推导，我们就可以讲霍夫便函推广到可以检测任意形状。<br>$$<br>v(\theta)=x(\theta)\begin{bmatrix}1\\0\end{bmatrix}+y(\theta)\begin{bmatrix}0\\1\end{bmatrix}<br>$$<br>我们可以使用与椭圆类似的方法来定义图形的形状。<br>$$<br>\omega(\theta)=b+\lambda R(\rho)v(\theta)<br>$$<br>其中，b表示平移，$\lambda$表示尺度因子，$R(\rho)$表示旋转因子。因此，图形的位置可以用下式表示<br>$$<br>b=\omega(\theta)-\lambda R(\rho)v(\theta)<br>$$<br>给定一个图形的形状$\omega(\theta)$和一组参数$\lambda, \rho$，我们就可以定义图形的位置。然而，由于图形的形状依赖于我们要寻找的参数，因此我们没办法获得图形的形状。但是，对于图形的上面的点我们能够获取到，即<br>$$<br>b=\omega_i-\lambda R(\rho)v(\theta)<br>$$<br>对于图形上的所有点，我们能获得形如上式的一系列方程。在GHT中，我们假定这一系列离散的点就表示了图形的形状。这样，通过上面的方程我们就能够gather evidence。在GHT的gathering evidence过程中，我们基于梯度方向信息对匹配点进行的限制。</p>
+<p>广义霍夫变换之所以能处理任意形状的图形并不是找到了可以表示任意图形的方程，而是使用表的方式来（离散地）描述一种图形，把图形边缘点坐标保存在一张表（RTable）中，那么该图形就是确定的了。</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_GHT.png" alt="GHT"></p>
+<p>Rtable列出了边界点上所有点的角度和其与参考点构成的向量的对应关系。</p>
+<p>计算Rtable的步骤如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">1. 计算参考点</div><div class="line">遍历模型中所有边缘点</div><div class="line">2. 计算边缘点的梯度角度</div><div class="line">3. 计算边缘点与参考点构成的向量</div><div class="line">4. 按照梯度角度的对应关系存储在rtable中</div></pre></td></tr></table></figure>
+<p>GHT的过程如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">1. 使用边缘检测算法计算图像中的所有边缘点和其梯度方向。</div><div class="line">遍历所有边缘点</div><div class="line">2. 按照梯度方向在rtable中查找对应行</div><div class="line">3. 对对应行中的所有向量，与当前边缘点做差得出参考点坐标，同时在累积空间中进行累加。</div><div class="line">4. 在累积空间中累积高度高的点则为匹配图形的中心。</div><div class="line">5. 通过GHT反变换计算图形中心所对应的图形边缘点坐标</div></pre></td></tr></table></figure>
+<p>广义霍夫变换的精妙之处在于为参数增加了两个关联，使得有平移和旋转（无缩放）的情况只需遍历一个参数，总共三个参数分别是图形的中心坐标（横纵）、旋转角度。如果加上缩放则为四个参数，这也只是和霍夫检测圆的规模一样而已。</p>
+<h3 id="4-Invariant-Generalized-Hough-Transform"><a href="#4-Invariant-Generalized-Hough-Transform" class="headerlink" title="4. Invariant Generalized Hough Transform"></a>4. Invariant Generalized Hough Transform</h3><p>广义霍夫变换中通过梯度方向来将图形边缘点与模板进行匹配。然而平移和缩放的同时边缘点的梯度方向也会发生改变，因此我们需要遍历旋转和缩放来进行完全匹配。为了降低计算复杂度，我们可以考虑使用一种不受旋转和缩放影响的特性（Invariant feature）来替换梯度。这样我们就只需要一个二维的累积空间就可以定位图形了。</p>
+<p>加入下列约束<br>$$<br>Q(\omega_i)=Q(v(\theta))<br>$$<br>其中，函数Q是计算一个点的特性，并且具有不变性。这种特性可以是颜色，或者任何其他在模型和图像中不会发生变化的特性。最普遍的不变特性可以考虑几何特征。</p>
+<p>在这里，我们可以考虑一个角。通过把每个边缘点$\omega_i$与两个点${\omega_j,\omega_T}$组合，我们可以得到一个角，它能够通过以下计算得到，并且不随尺度和旋转二改变。<br>$$<br>Q(\omega_i)=\frac{X_jY_i-X_iY_j}{X_iX_j+Y_iY_j}<br>$$<br>其中，$X_k=\omega_k-\omega_T,\ Y_k=\omega_k-\omega_T$</p>
+<p>按照下图中表示的几何关系，角$\beta$可以通过上面的公式计算得到，用对应的点和其梯度来表示就是<br>$$<br>Q(\omega_i)=\frac{\phi’_i-\phi’_j}{1+\phi’_i\phi’_j}<br>$$<br>我们可以将广义霍夫变换Rtable中的梯度角度替换为$\beta$。新的Rtable形式如下图所示。</p>
+<p><img src="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/geometry_of_IGHT.png" alt="IGHT"></p>
+<p>尽管角度$\beta$不跟随缩放和旋转变化，但是向量$\gamma(\lambda,\rho)$却会跟随缩放和旋转发生变化。因此，为了得到一个不变的方程，我们必须更改位置向量的定义。</p>
+<p>与圆和椭圆类似，我们可以通过经过中心点的直线的投票来确定中心点的位置，这条线由它的斜率$\phi’’$确定。</p>
+<p>通过一些几何推导（此处省略），我们可以得到<br>$$<br>\hat{\phi’’}=k+\hat{\phi’}<br>$$<br>其中，k可以通过预先计算储存在RTable中。那么投票直线的方程可以表示为<br>$$<br>y_0=\phi’’(x_0-\omega_{xi})+\omega_{yi}<br>$$<br>建立Rtable的过程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">1. 计算参考点坐标</div><div class="line">遍历模型中所有边缘点</div><div class="line">2. 计算边缘点的不变角beta</div><div class="line">3. 计算边缘点对应的角度k值</div><div class="line">4 按照不变角beta的对应关系，将其k值填入Rtable对应行中</div></pre></td></tr></table></figure>
+<p>IGHT的过程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">1. 使用边缘检测算法计算图像中的所有边缘点和其梯度方向。</div><div class="line">遍历所有边缘点</div><div class="line">2. 计算该边缘点的不变角的值，通过不变角的值在rtable中查找对应行</div><div class="line">3. 对对应行中的所有k值，计算对应的投票直线的斜率值，同时在累积空间中对图形位置中心进行累加。</div><div class="line">4. 在累积空间中累积高度高的点则为匹配图形的中心。</div><div class="line">5. 通过IGHT反变换计算图形中心所对应的图形边缘点坐标</div></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer class="article-footer">
+      
+        
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
+
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
+
+
+
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/图像处理/">图像处理</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/目标检测/">目标检测</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2016/10/14/ubuntu LAMP环境搭建/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          ubuntu LAMP环境搭建
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2016/08/19/Spark安装与环境配置/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Spark安装与环境配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+<!-- Table of Contents -->
+
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-基本Hough变换"><span class="toc-number">1.</span> <span class="toc-text">1. 基本Hough变换</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-Lines"><span class="toc-number">1.1.</span> <span class="toc-text">1)  Lines</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-Circles"><span class="toc-number">1.2.</span> <span class="toc-text">2) Circles</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-Ellipse"><span class="toc-number">1.3.</span> <span class="toc-text">3) Ellipse</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-参数空间分解"><span class="toc-number">2.</span> <span class="toc-text">2. 参数空间分解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-lines"><span class="toc-number">2.1.</span> <span class="toc-text">1) lines</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-circles"><span class="toc-number">2.2.</span> <span class="toc-text">2) circles</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-Ellipse-1"><span class="toc-number">2.3.</span> <span class="toc-text">3) Ellipse</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-广义霍夫变换"><span class="toc-number">3.</span> <span class="toc-text">3. 广义霍夫变换</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-Invariant-Generalized-Hough-Transform"><span class="toc-number">4.</span> <span class="toc-text">4. Invariant Generalized Hough Transform</span></a></li></ol>
+    
+    </div>
+  </aside>
+</section>
+        
+      </div>
+      
+      <footer id="footer">
+  
+
+  <div class="container">
+      <div class="row">
+	      <p> Powered by <a href="http://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/iTimeTraveler/hexo-theme-hiker" target="_blank">Hexo-theme-hiker</a> </p>
+	      <p id="copyRightEn">Copyright &copy; 2013 - 2017 plWang&#39;s Blog All Rights Reserved.</p>
+	      <p id="copyRightCn">Wang Penglin hold copyright</p>
+	</div>
+  </div>
+</footer>
+
+
+<!-- min height -->
+
+<script>
+    var wrapdiv = document.getElementById("wrap");
+    var contentdiv = document.getElementById("content");
+    var allheader = document.getElementById("allheader");
+
+    wrapdiv.style.minHeight = document.body.offsetHeight + "px";
+    if (allheader != null) {
+      contentdiv.style.minHeight = document.body.offsetHeight - allheader.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    } else {
+      contentdiv.style.minHeight = document.body.offsetHeight - document.getElementById("footer").offsetHeight + "px";
+    }
+</script>
+    </div>
+    <!-- <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/categories" class="mobile-nav-link">Categories</a>
+  
+    <a href="/tags" class="mobile-nav-link">Tags</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav> -->
+    
+<div style="display: none;">
+  <script src="https://s11.cnzz.com/z_stat.php?id=1260716016&web_id=1260716016" language="JavaScript"></script>
+</div>
+
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+<script src="/js/bootstrap.js"></script>
+
+
+
+
+  <script src="/js/dialog.js"></script>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-90550327-1', 'auto');
+ga('send', 'pageview');
+
+</script>
+<!-- End Google Analytics -->
+
+
+
+
+  </div>
+
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="myModalLabel">设置</h2>
+      </div>
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+
+
+      <div class="modal-body">
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne" onclick="javascript:setFontSize();" aria-expanded="true" aria-controls="collapseOne">
+              正文字号大小
+            </a>
+          </div>
+          <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            您已调整页面字体大小
+          </div>
+        </div>
+      
+
+
+          <div style="margin:6px;">
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" onclick="javascript:setBackground();" aria-expanded="true" aria-controls="collapseTwo">
+              夜间护眼模式
+            </a>
+        </div>
+          <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+          <div class="panel-body">
+            夜间模式已经开启，再次单击按钮即可关闭 
+          </div>
+        </div>
+
+        <div>
+            <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="true" aria-controls="collapseThree">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;关 于&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</a>
+        </div>
+         <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+          <div class="panel-body">
+            plWang&#39;s Blog
+          </div>
+          <div class="panel-body">
+            Copyright © 2017 Wang Penglin All Rights Reserved.
+          </div>
+        </div>
+      </div>
+
+
+      <hr style="margin-top:0px; margin-bottom:0px; width:80%; border-top: 1px solid #000;">
+      <hr style="margin-top:2px; margin-bottom:0px; width:80%; border-top: 3px solid #000;">
+      <div class="modal-footer">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+  <a id="rocket" href="#top" class=""></a>
+  <script type="text/javascript" src="/js/totop.js?v=1.0.0" async=""></script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+  
+
+</body>
+</html>
