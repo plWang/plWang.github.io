@@ -162,6 +162,54 @@
         
           <section id="main" style="float:none;">
   
+    <article id="post-cs231n-Assignment2-Part2"  class="article article-type-post" itemscope itemprop="blogPost" >
+  <div id="articleInner" class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="thumb" itemprop="name">
+      <a class="article-title" href="/2017/02/09/cs231n-Assignment2-Part2/">CS231n课程作业2-Part2：卷积神经网络的模块化实现</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-meta">
+      
+	<a href="/2017/02/09/cs231n-Assignment2-Part2/" class="article-date">
+	  <time datetime="2017-02-09T06:28:00.000Z" itemprop="datePublished">2017-02-09</time>
+	</a>
+
+      
+    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
+
+    </div>
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>本文主要介绍cs231n课程作业assignment2的第二部分：卷积神经网络中各种层的实现以及如何实现一个完整的卷积神经网络并在Cifar-10训练集上进行测试。</p>
+        <!-- 本文主要介绍cs231n课程作业assignment2的第二部分：卷积神经网络中各种层的实现以及如何实现一个完整的卷积神经网络并在Cifar-10训练集上进行测试。
+
+1. 卷积层的实现1.1 前向传播简单实现卷积层前向传播时进行的主要操作就是让滤波器集合与输入图像进行卷积，本质上即是让滤波器在输入数据上进行滑动并进行内积，因此最原始的想法就是使用简单的for循环将滤波器与输入图像的各个位置......  -->
+        <p class="article-more-link">
+          <a href="/2017/02/09/cs231n-Assignment2-Part2/#more">Read More</a>
+        </p>
+      
+    </div>
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/深度学习/">深度学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+<!-- Table of Contents -->
+
+  
     <article id="post-CNN_overview"  class="article article-type-post" itemscope itemprop="blogPost" >
   <div id="articleInner" class="article-inner">
     
@@ -589,66 +637,6 @@ sig......  -->
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/SQLAlchemy/">SQLAlchemy</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/flask/">flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/redis/">redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/web开发/">web开发</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-DeployFlaskUsingApache"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/10/21/DeployFlaskUsingApache/">使用Apache+mog_wsgi部署Flask应用</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/10/21/DeployFlaskUsingApache/" class="article-date">
-	  <time datetime="2016-10-21T12:15:13.000Z" itemprop="datePublished">2016-10-21</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/python/">python</a><a class="article-category-link" href="/categories/python/web开发/">web开发</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>之前开始学习flask框架，试着用flask写了一个小的web应用，想要把它部署在服务器上。查了很多资料，也遇到了不少坑，所以想把自己部署的过程记录一下。</p>
-<p>Flask应用可以采用多种方式部署。官方推荐了几种方式：</p>
-<ul>
-<li>Apache + mod_wsgi</li>
-<li>Nginx + Gunicorn</li>
-<li>uwsgi</li>
-</ul>
-<p>因为我的服务器上之前部署了apache，所以我采用了第一种Apache+mod_wsgi的方式来部署我的flask应用。<br>
-        <!-- 之前开始学习flask框架，试着用flask写了一个小的web应用，想要把它部署在服务器上。查了很多资料，也遇到了不少坑，所以想把自己部署的过程记录一下。
-Flask应用可以采用多种方式部署。官方推荐了几种方式：
-
-Apache + mod_wsgi
-Nginx + Gunicorn
-uwsgi
-
-因为我的服务器上之前部署了apache，所以我采用了第一种Apache+mod_wsgi的方式......  -->
-        <p class="article-more-link">
-          <a href="/2016/10/21/DeployFlaskUsingApache/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/flask/">flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/web/">web</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/环境搭建/">环境搭建</a></li></ul>
 
     </footer>
   </div>
