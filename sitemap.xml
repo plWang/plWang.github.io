@@ -2,6 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://plWang.github.io/categories/index.html</loc>
+    
+    <lastmod>2017-02-09T03:16:38.034Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://plWang.github.io/tags/index.html</loc>
+    
+    <lastmod>2017-02-09T03:15:37.018Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://plWang.github.io/2017/02/07/CNN_overview/</loc>
     
     <lastmod>2017-02-08T09:31:27.757Z</lastmod>
@@ -51,13 +65,6 @@
   </url>
   
   <url>
-    <loc>https://plWang.github.io/categories/index.html</loc>
-    
-    <lastmod>2016-11-03T08:44:33.359Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://plWang.github.io/2016/10/31/flaskDevInPractice-3/</loc>
     
     <lastmod>2016-11-03T08:28:24.063Z</lastmod>
@@ -100,7 +107,7 @@
   </url>
   
   <url>
-    <loc>https://plWang.github.io/2016/07/11/JPEG-LS%E6%A6%82%E8%BF%B0/</loc>
+    <loc>https://plWang.github.io/about/index.html</loc>
     
     <lastmod>2016-10-14T02:47:07.836Z</lastmod>
     
@@ -114,7 +121,7 @@
   </url>
   
   <url>
-    <loc>https://plWang.github.io/about/index.html</loc>
+    <loc>https://plWang.github.io/2016/07/11/JPEG-LS%E6%A6%82%E8%BF%B0/</loc>
     
     <lastmod>2016-10-14T02:47:07.836Z</lastmod>
     
