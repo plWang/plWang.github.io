@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://plWang.github.io/"/>
-  <updated>2017-03-10T07:33:24.479Z</updated>
+  <updated>2017-03-10T07:36:26.867Z</updated>
   <id>https://plWang.github.io/</id>
   
   <author>
@@ -16,11 +16,11 @@
   <generator uri="http://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM</title>
+    <title>CS231n Assignment3-Part1：Image Captioning using vanilla RNN and LSTM</title>
     <link href="https://plWang.github.io/2017/03/10/CS231n%20assignment3-part1/"/>
     <id>https://plWang.github.io/2017/03/10/CS231n assignment3-part1/</id>
     <published>2017-03-10T07:28:00.000Z</published>
-    <updated>2017-03-10T07:33:24.479Z</updated>
+    <updated>2017-03-10T07:36:26.867Z</updated>
     
     <content type="html"><![CDATA[<p>Ａbreif introduction to vanilla RNN and LSTM.</p>
 <a id="more"></a>
