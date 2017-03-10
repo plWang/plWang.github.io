@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://plWang.github.io/"/>
-  <updated>2017-03-10T07:27:33.424Z</updated>
+  <updated>2017-03-10T07:33:24.479Z</updated>
   <id>https://plWang.github.io/</id>
   
   <author>
@@ -20,9 +20,10 @@
     <link href="https://plWang.github.io/2017/03/10/CS231n%20assignment3-part1/"/>
     <id>https://plWang.github.io/2017/03/10/CS231n assignment3-part1/</id>
     <published>2017-03-10T07:28:00.000Z</published>
-    <updated>2017-03-10T07:27:33.424Z</updated>
+    <updated>2017-03-10T07:33:24.479Z</updated>
     
-    <content type="html"><![CDATA[<a id="more"></a>
+    <content type="html"><![CDATA[<p>Ａbreif introduction to vanilla RNN and LSTM.</p>
+<a id="more"></a>
 <h2 id="1-RNN-Captioning"><a href="#1-RNN-Captioning" class="headerlink" title="1. RNN Captioning"></a>1. RNN Captioning</h2><h3 id="1-1-Data-Preprocessing"><a href="#1-1-Data-Preprocessing" class="headerlink" title="1.1 Data Preprocessing"></a>1.1 Data Preprocessing</h3><ol>
 <li>prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet</li>
 <li>to cut down process time and memory requirements, reduce the dimensionality of the features from 4096 to 512 (Through PCA)</li>
@@ -80,8 +81,7 @@
     
     <summary type="html">
     
-      &lt;a id=&quot;more&quot;&gt;&lt;/a&gt;
-&lt;h2 id=&quot;1-RNN-Captioning&quot;&gt;&lt;a href=&quot;#1-RNN-Captioning&quot; class=&quot;headerlink&quot; title=&quot;1. RNN Captioning&quot;&gt;&lt;/a&gt;1. RNN Captioning&lt;/
+      &lt;p&gt;Ａbreif introduction to vanilla RNN and LSTM.&lt;/p&gt;
     
     </summary>
     

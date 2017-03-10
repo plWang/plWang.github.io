@@ -11,24 +11,18 @@
   
   
   
-  <meta name="description" content="1. RNN Captioning1.1 Data Preprocessing
-prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
-to cut dow">
+  <meta name="description" content="Ａbreif introduction to vanilla RNN and LSTM.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM">
 <meta property="og:url" content="https://plWang.github.io/2017/03/10/CS231n assignment3-part1/index.html">
 <meta property="og:site_name" content="plWang's Blog">
-<meta property="og:description" content="1. RNN Captioning1.1 Data Preprocessing
-prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
-to cut dow">
+<meta property="og:description" content="Ａbreif introduction to vanilla RNN and LSTM.">
 <meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/RNN-unrolled.png">
 <meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/LSTM3-var-GRU.png">
-<meta property="og:updated_time" content="2017-03-10T07:27:33.424Z">
+<meta property="og:updated_time" content="2017-03-10T07:33:24.479Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM">
-<meta name="twitter:description" content="1. RNN Captioning1.1 Data Preprocessing
-prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
-to cut dow">
+<meta name="twitter:description" content="Ａbreif introduction to vanilla RNN and LSTM.">
 <meta name="twitter:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/RNN-unrolled.png">
   
     <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
@@ -178,7 +172,8 @@ to cut dow">
     </div>
     <div class="article-entry" itemprop="articleBody">
       
-        <a id="more"></a>
+        <p>Ａbreif introduction to vanilla RNN and LSTM.</p>
+<a id="more"></a>
 <h2 id="1-RNN-Captioning"><a href="#1-RNN-Captioning" class="headerlink" title="1. RNN Captioning"></a>1. RNN Captioning</h2><h3 id="1-1-Data-Preprocessing"><a href="#1-1-Data-Preprocessing" class="headerlink" title="1.1 Data Preprocessing"></a>1.1 Data Preprocessing</h3><ol>
 <li>prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet</li>
 <li>to cut down process time and memory requirements, reduce the dimensionality of the features from 4096 to 512 (Through PCA)</li>
