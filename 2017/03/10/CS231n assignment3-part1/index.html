@@ -3,21 +3,33 @@
 <head>
   <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="utf-8">
   
-  <title>plWang&#39;s Blog</title>
+  <title>cs231n assignment2-part1：image captioning using vanilla rnn and lstm | plWang&#39;s Blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   
+  <meta name="keywords" content="机器学习神经网络深度学习" />
   
   
   
-  <meta name="description" content="Welcome">
-<meta property="og:type" content="website">
-<meta property="og:title" content="plWang's Blog">
-<meta property="og:url" content="https://plWang.github.io/index.html">
+  
+  <meta name="description" content="1. RNN Captioning1.1 Data Preprocessing
+prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
+to cut dow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM">
+<meta property="og:url" content="https://plWang.github.io/2017/03/10/CS231n assignment3-part1/index.html">
 <meta property="og:site_name" content="plWang's Blog">
-<meta property="og:description" content="Welcome">
+<meta property="og:description" content="1. RNN Captioning1.1 Data Preprocessing
+prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
+to cut dow">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/RNN-unrolled.png">
+<meta property="og:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/LSTM3-var-GRU.png">
+<meta property="og:updated_time" content="2017-03-10T07:27:33.424Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="plWang's Blog">
-<meta name="twitter:description" content="Welcome">
+<meta name="twitter:title" content="CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM">
+<meta name="twitter:description" content="1. RNN Captioning1.1 Data Preprocessing
+prepocess the data and extract the feature: the features have already been extracted from the fc7 layer of the VGG-16 network pretrained on ImageNet
+to cut dow">
+<meta name="twitter:image" content="http://oexh9rdj7.bkt.clouddn.com/myBlog/posts/NN/RNN-unrolled.png">
   
     <link rel="alternate" href="/atom.xml" title="plWang&#39;s Blog" type="application/atom+xml">
   
@@ -41,9 +53,11 @@
   <link rel="stylesheet" href="/css/bootstrap.css" >
 
   
-    <link rel="stylesheet" href="/css/home.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+    <link rel="stylesheet" href="/css/dialog.css">
   
 
+  
+    <link rel="stylesheet" href="/css/header-post.css" ><!-- hexo-inject:begin --><!-- hexo-inject:end -->
   
 
   
@@ -52,125 +66,101 @@
 
 <body>
   
-    <!-- hexo-inject:begin --><!-- hexo-inject:end --><header id="header">
-
-  
-    <div id="intrologo" class="intro-logo" style="background-position:center; background-repeat:no-repeat; background-image: url(); background-size: auto 100%;">
-    <script>
-        var imgUrls = "css/images/akjoujt.jpg".split(",");
-        var random = Math.floor((Math.random() * imgUrls.length ));
-        if (imgUrls[random].startsWith('http') || imgUrls[random].indexOf('://') >= 0) {
-          document.getElementById("intrologo").style.backgroundImage='url(' + imgUrls[random] + ')';
-        } else {
-          document.getElementById("intrologo").style.backgroundImage='url(/' + imgUrls[random] + ')';
-        }
-    </script>
-  
-
-    <canvas width="100%" height="100%"></canvas>
-    <script>
-      var c = document.getElementsByTagName('canvas')[0],
-          x = c.getContext('2d'),
-          w = window.innerWidth,
-          h = window.innerHeight,
-          pr = window.devicePixelRatio || 1,
-          f = 90,
-          q,
-          m = Math,
-          r = 0,
-          u = m.PI*2,
-          v = m.cos,
-          z = m.random
-      c.width = w*pr
-      c.height = h*pr
-      x.scale(pr, pr)
-      x.globalAlpha = 0.6
-
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div id="container">
+    <div id="wrap">
       
-    </script>
-    
+        <header>
 
-    
-      <div id="homelogo" class="homelogo" style="background: rgba(255,255,255,1);"> 
-    
+    <div id="allheader" class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="navbar-inner">
+          
+          <div class="container"> 
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
 
-        
-          <div class="homelogoback"  style="border: 1px solid #404040;" >
-            <h1><a href="#content" id="logo">plWang&#39;s Blog</a></h1>
-            <h3>Welcome</h3>
-            <h5>Wang Penglin</h5>
-            <!-- <p><a href="https://github.com/iTimeTraveler" target="_blank">Github</a></p> -->
-          </div>
-        
-    
+            
+              <a class="brand" style="border-width: 0;">
+                <p>plWang&#39;s Blog</p>
+              </a>
+            
+            
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                
+                  <li> <a class="main-nav-link" href="/">Home</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/archives">Archives</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/categories">Categories</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/tags">Tags</a> </li>
+                
+                  <li> <a class="main-nav-link" href="/about">About</a> </li>
+                
+                  <li><div id="search-form-wrap">
+
+    <form class="search-form">
+        <input type="text" class="ins-search-input search-form-input" placeholder="" />
+        <button type="submit" class="search-form-submit"></button>
+    </form>
+    <div class="ins-search">
+    <div class="ins-search-mask"></div>
+    <div class="ins-search-container">
+        <div class="ins-input-wrapper">
+            <input type="text" class="ins-search-input" placeholder="Type something..." />
+            <span class="ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
+        </div>
+        <div class="ins-section-wrapper">
+            <div class="ins-section-container"></div>
+        </div>
     </div>
-  </div>
+</div>
+<script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: 'Posts',
+            PAGES: 'Pages',
+            CATEGORIES: 'Categories',
+            TAGS: 'Tags',
+            UNTITLED: '(Untitled)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+<script src="/js/insight.js"></script>
 
-  <!-- 自适应主页背景大图 -->
-  
-    <script>
-        var img = new Image();
-        var intrologodiv = document.getElementById("intrologo");
-        img.src = intrologodiv.style.backgroundImage.replace('url(','').replace(')','').replace(/\"/gi, "");
-        img.onload=function(){
-          if (img.width / img.height <= document.body.clientWidth / document.body.clientHeight) {
-            intrologodiv.style.backgroundSize = "100% auto";
-          } else {
-            intrologodiv.style.backgroundSize = "auto 100%";
-          }
-        };
-    </script>
- 
-
- <!-- home_logo_image居中 -->
- 
-    <script>
-        var homelogodiv = document.getElementById("homelogo");
-        if (document.all.homelogo.offsetWidth > document.body.clientWidth) {
-          homelogodiv.style.width = document.body.clientWidth + "px";
-          homelogodiv.style.marginLeft = document.body.clientWidth * -0.5 + "px";
-        } else {
-          homelogodiv.style.width = homelogodiv.clientWidth  + "px";
-          homelogodiv.style.marginLeft = (homelogodiv.clientWidth)  * -0.5 + "px";
-        }
-    </script>
-  
-
-  <div class="intro-navigate">
-      <p class="navigater-list">
-        
-          <a id="beautifont" class="main-nav-link" href="/">Home</a>
-        
-          <a id="beautifont" class="main-nav-link" href="/archives">Archives</a>
-        
-          <a id="beautifont" class="main-nav-link" href="/categories">Categories</a>
-        
-          <a id="beautifont" class="main-nav-link" href="/tags">Tags</a>
-        
-          <a id="beautifont" class="main-nav-link" href="/about">About</a>
-        
-      </p>
-  </div>
+</div></li>
+            </div>
+          </div>
+                
+      </div>
+    </div>
 
 </header>
-  
-  <div id="container">
-    <div id="wrap">
+
+
+
       
             
       <div id="content" class="outer">
         
-          <section id="main" style="float:none;">
-  
-    <article id="post-CS231n assignment3-part1"  class="article article-type-post" itemscope itemprop="blogPost" >
+          <section id="main" style="float:none;"><article id="post-CS231n assignment3-part1" style="width: 75%; float:left;" class="article article-type-post" itemscope itemprop="blogPost" >
   <div id="articleInner" class="article-inner">
     
     
       <header class="article-header">
         
   
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2017/03/10/CS231n assignment3-part1/">CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM</a>
+    <h1 class="thumb" class="article-title" itemprop="name">
+      CS231n Assignment2-Part1：Image Captioning using vanilla RNN and LSTM
     </h1>
   
 
@@ -247,53 +237,33 @@
     </div>
     <footer class="article-footer">
       
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/深度学习/">深度学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-cs231n-Assignment2-Part2"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
         
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2017/02/09/cs231n-Assignment2-Part2/">CS231n课程作业2-Part2：卷积神经网络的模块化实现</a>
-    </h1>
-  
+	<section id="comments" class="comment">
+	  <div id="disqus_thread">
+	  <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+	  </div>
+	</section>
 
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2017/02/09/cs231n-Assignment2-Part2/" class="article-date">
-	  <time datetime="2017-02-09T06:28:00.000Z" itemprop="datePublished">2017-02-09</time>
-	</a>
+	<script type="text/javascript">
+	var disqus_shortname = 'plwang';
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	(function(){
+	  var dsq = document.createElement('script');
+	  dsq.type = 'text/javascript';
+	  dsq.async = true;
+	  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
+	  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	}());
+	</script>
 
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
 
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本文主要介绍cs231n课程作业assignment2的第二部分：卷积神经网络中各种层的实现以及如何实现一个完整的卷积神经网络并在Cifar-10训练集上进行测试。</p>
-        <!-- 本文主要介绍cs231n课程作业assignment2的第二部分：卷积神经网络中各种层的实现以及如何实现一个完整的卷积神经网络并在Cifar-10训练集上进行测试。
 
-1. 卷积层的实现1.1 前向传播简单实现卷积层前向传播时进行的主要操作就是让滤波器集合与输入图像进行卷积，本质上即是让滤波器在输入数据上进行滑动并进行内积，因此最原始的想法就是使用简单的for循环将滤波器与输入图像的各个位置......  -->
-        <p class="article-more-link">
-          <a href="/2017/02/09/cs231n-Assignment2-Part2/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
       
       
   <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/深度学习/">深度学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
@@ -301,413 +271,33 @@
     </footer>
   </div>
   
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-CNN_overview"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
     
-    
-      <header class="article-header">
-        
+<nav id="article-nav">
   
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2017/02/07/CNN_overview/">卷积神经网络（CNN）概述</a>
-    </h1>
   
+    <a href="/2017/02/09/cs231n-Assignment2-Part2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">CS231n课程作业2-Part2：卷积神经网络的模块化实现</div>
+    </a>
+  
+</nav>
 
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2017/02/07/CNN_overview/" class="article-date">
-	  <time datetime="2017-02-07T11:38:00.000Z" itemprop="datePublished">2017-02-07</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>卷积神经网络一般由三种结构的层构成：</p>
-<ul>
-<li>卷积层（Convolution layer）</li>
-<li>汇聚层（Pooling layer）</li>
-<li>全连接层（Fully Connected Layer）</li>
-</ul>
-        <!-- 卷积神经网络一般由三种结构的层构成：
-
-卷积层（Convolution layer）
-汇聚层（Pooling layer）
-全连接层（Fully Connected Layer）
-
-
-1. 卷积层（Convolution Layer）卷积层是由一些可学习的滤波器集合构成的，每个滤波器在空间上（宽度和高度）都比较小，深度和输入数据一致。前向传播时，每个滤波器都在输入数据的宽度和高度上滑动，与输......  -->
-        <p class="article-more-link">
-          <a href="/2017/02/07/CNN_overview/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/深度学习/">深度学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
   
 </article>
 
 <!-- Table of Contents -->
 
-  
-    <article id="post-cs231n-Assignment2-Part1"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
+  <aside id="sidebar">
+    <div id="toc" class="toc-article">
+    <strong class="toc-title">Contents</strong>
     
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-RNN-Captioning"><span class="toc-number">1.</span> <span class="toc-text">1. RNN Captioning</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-Data-Preprocessing"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 Data Preprocessing</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-Vanilla-RNN"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 Vanilla RNN</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-1-Hyperparameters"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 Hyperparameters:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-2-Parameters"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 Parameters:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-3-Inputs"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 Inputs:</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-4-Training-stage"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.2.4 Training stage</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-5-Test-stage"><span class="toc-number">1.2.5.</span> <span class="toc-text">1.2.5 Test stage</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-LSTM-Long-Short-Term-Memory"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 LSTM(Long Short Term Memory)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-1-The-problem-of-simple-RNN"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.3.1 The problem of simple RNN</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-2-The-structure-of-LSTM"><span class="toc-number">1.3.2.</span> <span class="toc-text">1.3.2 The structure of LSTM</span></a></li></ol></li></ol></li></ol>
     
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/12/06/cs231n-Assignment2-Part1/">CS231n课程作业2-Part1：基本神经网络的模块化实现</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/12/06/cs231n-Assignment2-Part1/" class="article-date">
-	  <time datetime="2016-12-06T03:28:00.000Z" itemprop="datePublished">2016-12-06</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
-
     </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的<a href="https://github.com/plWang/">Github</a>.</p>
-        <!-- 本文是CS231n作业2的第一部分，主要包含神经网络各种层（affine, Batchnorm, Dropout, Softmax等）的模块化实现及如何利用这些层实现一个完整的任意层数的全连接神经网络。其中完整代码可以参照我的Github.
-
-1. 神经网络的模块化实现1. 全连接层（Affine Layer）
-前向传播
-123456789101112131415161718192021de......  -->
-        <p class="article-more-link">
-          <a href="/2016/12/06/cs231n-Assignment2-Part1/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-hexo-mathjax"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/12/05/hexo-mathjax/">【转】Hexo下mathjax的转义问题</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/12/05/hexo-mathjax/" class="article-date">
-	  <time datetime="2016-12-05T07:37:58.000Z" itemprop="datePublished">2016-12-05</time>
-	</a>
-
-      
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p><a href="http://shomy.top/2016/10/22/hexo-markdown-mathjax/" target="_blank" rel="external">Hexo下mathjax的转义问题</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-Neural Network3-optim"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/12/05/Neural Network3-optim/">Neural Network3-参数更新方法</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/12/05/Neural Network3-optim/" class="article-date">
-	  <time datetime="2016-12-05T06:24:00.000Z" itemprop="datePublished">2016-12-05</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本文主要介绍了神经网络中各种参数的更新方法，包括Momentum, Adagrad, RMSprop, Adam等方法。</p>
-        <!-- 本文主要介绍了神经网络中各种参数的更新方法，包括Momentum, Adagrad, RMSprop, Adam等方法。
-
-Neural Network3: 参数更新方法1. 普通更新最简单的形式就死沿着梯度负方向改变参数。
-12# 普通更新x += -learning_rate * dx
-2. 动量更新(Momentum)123# 动量更新v = mu * v - learning_rat......  -->
-        <p class="article-more-link">
-          <a href="/2016/12/05/Neural Network3-optim/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-Neural Network2-setModel"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/12/05/Neural Network2-setModel/">Neural Network2-设置数据和模型</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/12/05/Neural Network2-setModel/" class="article-date">
-	  <time datetime="2016-12-05T03:43:00.000Z" itemprop="datePublished">2016-12-05</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>本文主要介绍神经网络中数据和模型的一些设置方法。主要包括数据预处理、权重初始化、正则化以及损失函数等内容。</p>
-        <!-- 本文主要介绍神经网络中数据和模型的一些设置方法。主要包括数据预处理、权重初始化、正则化以及损失函数等内容。
-
-1. 数据预处理1. 均值减法（Mean Subtraction）均值减法是最常用的预处理操作。它对数据中的每个特征减去平均值，从几何上可以理解为在每个维度上都将数据云的中心迁移到原点。在numpy中，可以通过X -= np.mean(X,axis=0)来实现。在图像中，更常用的是对......  -->
-        <p class="article-more-link">
-          <a href="/2016/12/05/Neural Network2-setModel/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-NeuralNetwork1-activationFunction"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/12/05/NeuralNetwork1-activationFunction/">Neural Network1-activation function</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/12/05/NeuralNetwork1-activationFunction/" class="article-date">
-	  <time datetime="2016-12-05T03:38:00.000Z" itemprop="datePublished">2016-12-05</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/机器学习/">机器学习</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>这是神经网络基础知识的总结，第一部分介绍了神经网络中常用的激活函数，包括Sigmoid, tanh, ReLU, Maxout等。具体介绍了各种激活函数的形式以及优缺点。</p>
-        <!-- 这是神经网络基础知识的总结，第一部分介绍了神经网络中常用的激活函数，包括Sigmoid, tanh, ReLU, Maxout等。具体介绍了各种激活函数的形式以及优缺点。
-
-1. 常用激活函数1. Sigmoid函数：$$\sigma(x) = 1/(1 + e^{-x})$$它输入实数值并将它挤压到0到1范围内。
-但是sigmoid函数在实际中已经很少使用，因为它有两个主要缺点：
-
-sig......  -->
-        <p class="article-more-link">
-          <a href="/2016/12/05/NeuralNetwork1-activationFunction/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/机器学习/">机器学习</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/神经网络/">神经网络</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-flaskDevInPractice-3"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/10/31/flaskDevInPractice-3/">Flask开发实践（三）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/10/31/flaskDevInPractice-3/" class="article-date">
-	  <time datetime="2016-10-31T06:33:25.000Z" itemprop="datePublished">2016-10-31</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/python/">python</a><a class="article-category-link" href="/categories/python/web开发/">web开发</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文<a href="https://plwang.github.io/2016/10/29/flaskDevInPractice-1/">Flask开发实践（一）</a>和<a href="https://plwang.github.io/2016/10/31/flaskDevInPractice-2/">Flask开发实践（二）</a>，完整的教程可以参照<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/">Flask-by-Example</a>。我的完整源码已经分享到我的<a href="https://github.com/plWang/wordcount">Github</a>上，大家可以参考。</p>
-        <!-- ​    这是Flask开发实践系列的第三部分，主要记录了将web应用部署到Heroku上的过程和我自己总结的一些经验。这篇博文主要包括了在Heroku上创建应用、配置postgresql数据库和redis以及如何同时运行web app和worker 两个进程。之前的开发过程可以参照我的前两篇博文Flask开发实践（一）和Flask开发实践（二），完整的教程可以参照Flask-by-Exam......  -->
-        <p class="article-more-link">
-          <a href="/2016/10/31/flaskDevInPractice-3/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Flask/">Flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/flask应用部署/">flask应用部署</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/heroku/">heroku</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/web开发/">web开发</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-    <article id="post-flaskDevInPractice-2"  class="article article-type-post" itemscope itemprop="blogPost" >
-  <div id="articleInner" class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 class="thumb" itemprop="name">
-      <a class="article-title" href="/2016/10/31/flaskDevInPractice-2/">Flask开发实践（二）</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-meta">
-      
-	<a href="/2016/10/31/flaskDevInPractice-2/" class="article-date">
-	  <time datetime="2016-10-31T06:19:31.000Z" itemprop="datePublished">2016-10-31</time>
-	</a>
-
-      
-    <a class="article-category-link" href="/categories/python/">python</a><a class="article-category-link" href="/categories/python/web开发/">web开发</a>
-
-    </div>
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>这是Flask开发系列的第二部分，继续记录我在前端中使用AngularJS进行轮询以及使用D3创建图表的过程和经验。具体的教程可以参考<a href="https://realpython.com/blog/python/flask-by-example-part-1-project-setup/">Flask-by-Example</a>。我自己的完整源码已经分享到我的<a href="https://github.com/plWang/wordcount">Github</a>上。</p>
-        <!-- 这是Flask开发系列的第二部分，继续记录我在前端中使用AngularJS进行轮询以及使用D3创建图表的过程和经验。具体的教程可以参考Flask-by-Example。我自己的完整源码已经分享到我的Github上。
-
-...  -->
-        <p class="article-more-link">
-          <a href="/2016/10/31/flaskDevInPractice-2/#more">Read More</a>
-        </p>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/AngularJS/">AngularJS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/D3/">D3</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/flask/">flask</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/web开发/">web开发</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-<!-- Table of Contents -->
-
-  
-
-
-  <nav id="page-nav">
-    
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
-  </nav>
-
+  </aside>
 </section>
         
       </div>
-      
-        <div align="center" style="margin-top: 30px;"><hr class="hr" style="margin:0px; height:3px;"></div>
       
       <footer id="footer">
   
@@ -795,9 +385,9 @@ sig......  -->
 <script src="/js/bootstrap.js"></script>
 
 
-  <script src="/js/home.js"></script>
 
 
+  <script src="/js/dialog.js"></script>
 
 
 
